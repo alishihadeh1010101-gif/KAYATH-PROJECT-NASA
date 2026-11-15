@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RadShield-MD</title>
+<style>
+:root{--bg:#040b1c;--panel:#0a1630;--panel2:#10203f;--line:#213a66;--text:#f2f5fb;--mut:#93a7c8;--acc:#5b9bff;--acc2:#fc3d21;--onacc:#04122b;
+  --ok:#34d399;--drift:#facc15;--act:#fb923c;--alert:#f87171;--glyph:#04121a;--bw:1px}
+*{box-sizing:border-box}
+html{font-size:15px}
+html[data-large=true]{font-size:18.75px}
+html[data-large=true] body{line-height:1.7}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:"Cascadia Mono",ui-monospace,Consolas,Menlo,monospace;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+h1,h2,h3{margin:0;font-weight:600}
+.lbl{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);font-weight:600}
+.wrap{max-width:1640px;margin:0 auto;padding:0 20px 40px}
+.sub{color:var(--mut);font-size:.85rem}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sp{justify-content:space-between}
+/* header */
+.hdr{display:flex;align-items:stretch;gap:24px;border-bottom:var(--bw) solid var(--line);padding:14px 0;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;justify-content:center;padding-right:24px;border-right:var(--bw) solid var(--line)}
+.brand h1{font-size:1.15rem;letter-spacing:.14em}
+.brand h1 span{color:var(--acc2)}
+.read{display:flex;gap:28px;flex:1;flex-wrap:wrap;align-items:center}
+.read>div{display:grid;gap:2px}
+.read b{font-size:1rem;font-weight:600}
+.bar2{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:10px 0;border-bottom:var(--bw) solid var(--line)}
+.seg{display:inline-flex;border:var(--bw) solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;border-right:var(--bw) solid var(--line);background:transparent;padding:0 14px;min-height:40px;font-size:.85rem;color:var(--mut)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true],.seg button[aria-selected=true]{background:var(--acc);color:var(--onacc);font-weight:600}
+.tabs{display:flex;gap:4px;margin:14px 0;border-bottom:var(--bw) solid var(--line)}
+.tabs button{border:0;background:none;padding:10px 16px;min-height:44px;color:var(--mut);border-bottom:2px solid transparent;margin-bottom:-1px;font-weight:600;font-size:.9rem}
+.tabs button[aria-selected=true]{color:var(--text);border-bottom-color:var(--acc2)}
+.sw{display:inline-flex;gap:8px;align-items:center;background:none;border:0;min-height:40px;padding:0 4px;font-size:.85rem;color:var(--mut)}
+.sw i{width:32px;height:18px;border-radius:99px;border:var(--bw) solid var(--mut);position:relative;flex:none}
+.sw i::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:var(--mut)}
+.sw[aria-pressed=true]{color:var(--text)}
+.sw[aria-pressed=true] i{background:var(--acc);border-color:var(--acc)}
+.sw[aria-pressed=true] i::after{left:16px;background:var(--onacc)}
+/* layout */
+.grid{display:grid;grid-template-columns:290px minmax(0,1fr) 400px;gap:20px;align-items:start}
+@media(max-width:1250px){.grid{grid-template-columns:260px minmax(0,1fr)}.grid>.right{grid-column:1/-1}}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:var(--bw) solid var(--line);border-radius:8px;padding:16px}
+.card+.card{margin-top:14px}
+.card>h2,.card>h3{font-size:.95rem;margin-bottom:10px}
+.stack{display:grid;gap:14px}
+.btn{border:var(--bw) solid var(--line);background:var(--panel2);border-radius:6px;padding:0 14px;min-height:44px;font-weight:600;font-size:.88rem}
+.btn:hover{border-color:var(--acc)}
+.btn.pri{background:var(--acc);color:var(--onacc);border-color:var(--acc)}
+.btn.sm{min-height:36px;padding:0 10px;font-size:.8rem}
+.btn.full{width:100%;text-align:left}
+.btn[aria-pressed=true]{border-color:var(--acc);box-shadow:inset 3px 0 0 var(--acc)}
+.badge{display:inline-flex;gap:6px;align-items:center;font-weight:700;font-size:.72rem;letter-spacing:.1em}
+.c0{color:var(--ok)}.c1{color:var(--drift)}.c2{color:var(--act)}.c3{color:var(--alert)}
+.haz{display:flex;gap:10px;align-items:center;width:100%;background:none;border:0;border-top:var(--bw) solid var(--line);padding:8px 0;min-height:48px;text-align:left}
+.haz:first-of-type{border-top:0}
+.haz .sub{font-size:.75rem}
+.haz[aria-pressed=false] .hn{color:var(--mut);text-decoration:line-through}
+.box{width:18px;height:18px;border:var(--bw) solid var(--mut);border-radius:3px;display:grid;place-items:center;flex:none}
+[aria-pressed=true]>.box{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
+.field{display:grid;gap:2px;margin:10px 0}
+.field label{font-size:.85rem;display:flex;justify-content:space-between}
+.field .ends{display:flex;justify-content:space-between;font-size:.7rem;color:var(--mut)}
+input[type=range]{width:100%;accent-color:var(--acc);height:26px;margin:0}
+input[type=number],input[type=text],input[type=date],select,textarea{width:100%;background:var(--panel2);color:var(--text);border:var(--bw) solid var(--line);border-radius:6px;padding:9px;min-height:42px;font:inherit}
+/* figure */
+.fig{position:relative;margin:0 auto;aspect-ratio:720/850;width:min(100%,780px,max(540px,calc((100vh - 400px)*.847)))}
+.anat{--figfill:var(--panel2);--figline:var(--mut)}
+.cam{position:absolute;inset:0;transform-origin:0 0;transition:transform .85s cubic-bezier(.22,.8,.2,1)}
+@media(prefers-reduced-motion:reduce){.cam{transition:none}}
+.fig svg{position:absolute;inset:0;width:100%;height:100%}
+.fig.zoomed{overflow:hidden;border-radius:8px;box-shadow:0 0 0 var(--bw) var(--line)}
+.fig.zoomed .call{opacity:0;pointer-events:none}
+.figbar{position:absolute;left:8px;right:8px;bottom:8px;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;z-index:2}
+.figbar .btn:not(.pri){background:var(--panel)}
+.lead{transition:opacity .3s}.fig.zoomed .lead{opacity:0}
+.anat [data-k]{cursor:pointer;transition:opacity .3s}
+.anat:not([data-sel=none]) [data-k]{opacity:.38}
+.inset{height:170px;background:var(--panel2);border:var(--bw) solid var(--line);border-radius:6px;margin:12px 0;overflow:hidden}
+.inset svg{width:100%;height:100%;display:block}
+.guide p{margin:4px 0 14px;font-size:.92rem}.guide ul{margin:6px 0 14px;padding-left:18px;font-size:.92rem}.guide li{margin:4px 0}
+.asst{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;border:var(--bw) solid var(--line);border-left:3px solid var(--acc);background:var(--panel);border-radius:8px;padding:10px 14px;margin-bottom:14px}
+.asst>.row{justify-content:flex-end}
+.warp{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:30}
+.camview{width:100%;max-height:56vh;background:#000;border-radius:6px;display:block;object-fit:contain}
+.asst .who{display:grid;grid-template-columns:auto auto;gap:2px 8px;align-items:center}
+.asst .who .sub{grid-column:2;font-size:.72rem}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--mut)}
+.dot.on{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 25%,transparent)}
+@media(max-width:1100px){.asst{grid-template-columns:1fr}}
+.call{transition:opacity .3s;position:absolute;width:22.5%;transform:translateY(-50%);min-height:48px;display:flex;gap:9px;align-items:center;padding:4px 2px;background:none;border:0;border-radius:4px;text-align:left}
+.call.L{left:0;flex-direction:row-reverse;text-align:right}.call.R{right:0}
+.call b{display:block;font-size:.9rem;font-weight:600;line-height:1.2}
+.call small{font-size:.66rem;letter-spacing:.12em;font-weight:700}
+.call:hover b,.call[aria-pressed=true] b{color:var(--acc)}
+.call.scan{outline:2px solid var(--acc);outline-offset:2px}
+.call.hl b{text-decoration:underline dashed;text-underline-offset:4px}
+.call svg{position:static;width:20px;height:20px;flex:none}
+@media(max-width:620px){.call b{font-size:.7rem}}
+@media(prefers-reduced-motion:no-preference){.aura{animation:br 4s ease-in-out infinite}}
+@keyframes br{50%{opacity:.5}}
+.drv{display:grid;grid-template-columns:1fr 70px;gap:10px;align-items:center;font-size:.85rem;padding:4px 0}
+.meter{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;border:var(--bw) solid var(--line)}
+.meter i{display:block;height:100%}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border:var(--bw) solid var(--line);border-radius:6px;margin:6px 0;background:var(--panel2);cursor:pointer;min-height:44px;font-size:.88rem}
+.chk input{width:18px;height:18px;accent-color:var(--acc);margin-top:2px;flex:none}
+.chk.done{color:var(--mut);text-decoration:line-through}
+.note{border-left:3px solid var(--act);background:var(--panel2);padding:10px 12px;border-radius:0 6px 6px 0;font-size:.88rem}
+.note.al{border-left-color:var(--alert)}
+hr{border:0;border-top:var(--bw) solid var(--line);margin:14px 0}
+.chip{display:inline-block;border:var(--bw) solid var(--line);border-radius:4px;padding:1px 8px;font-size:.72rem;color:var(--mut)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+td,th{text-align:left;padding:8px 6px;border-top:var(--bw) solid var(--line);vertical-align:top}
+th{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);border-top:0}
+pre{background:var(--panel2);border:var(--bw) solid var(--line);border-radius:6px;padding:14px;overflow:auto;font-size:.8rem;white-space:pre-wrap;margin:0}
+/* hazard pop-up */
+.hzwrap{position:fixed;inset:0;background:rgba(0,0,0,.72);display:grid;place-items:center;z-index:60;padding:16px}
+.hz{width:min(680px,100%);background:#0a0a0a;color:#fff;border:4px solid #ef4444;box-shadow:0 0 0 4px #000,0 0 60px rgba(239,68,68,.55)}
+.hz .stripe{height:22px;background:repeating-linear-gradient(-45deg,#facc15 0 18px,#0a0a0a 18px 36px)}
+.hz .in{padding:20px 24px}
+.hz h2{font-size:1.5rem;letter-spacing:.06em;text-transform:uppercase;color:#fff;line-height:1.2}
+.hz .tag{display:inline-flex;gap:8px;align-items:center;background:#ef4444;color:#000;font-weight:800;letter-spacing:.14em;font-size:.8rem;padding:4px 10px;margin-bottom:10px}
+.hz ol{list-style:none;padding:0;margin:16px 0;display:grid;gap:8px}
+.hz li{display:grid;grid-template-columns:54px 1fr;align-items:center;border:2px solid #facc15;font-size:1.15rem;font-weight:700;line-height:1.3}
+.hz li span{background:#facc15;color:#000;font-size:1.6rem;font-weight:900;height:100%;min-height:58px;display:grid;place-items:center}
+.hz li div{padding:10px 14px}
+.hz .ack{background:#fff;color:#000;border:0;font-weight:800;letter-spacing:.08em;min-height:48px;padding:0 20px;text-transform:uppercase}
+.hz .why{color:#fca5a5;font-size:.9rem}
+@media(prefers-reduced-motion:no-preference){.hz{animation:hzp 1.2s ease-in-out infinite}}
+@keyframes hzp{50%{box-shadow:0 0 0 4px #000,0 0 90px rgba(239,68,68,.9)}}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:50;padding:16px}
+.modal>.card{width:min(560px,100%);max-height:92vh;overflow:auto}
+.steps{display:flex;gap:6px;margin:10px 0 4px}
+.steps i{flex:1;height:4px;background:var(--line);border-radius:2px}
+.steps i.on{background:var(--acc)}
+.toasts{position:fixed;right:16px;bottom:16px;display:grid;gap:8px;z-index:70;max-width:min(380px,90vw)}
+.toast{background:var(--panel);border:var(--bw) solid var(--acc);border-left-width:4px;border-radius:6px;padding:12px 14px;font-size:.9rem;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.target{position:absolute;width:52px;height:52px;border-radius:50%;background:var(--acc);border:3px solid var(--text)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.cols>.card{margin:0}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<script>
+window.addEventListener('error',e=>{window.__err=(window.__err||'')+(e.message||'')+' @'+(e.lineno||'')+' | '});
+/* Anatomical plate: returns SVG markup in a 720 x 850 space, centre line x=360. Regions carry data-k. */
+window.anatomySVG=function(){
+  const spline=P=>{const n=P.length;let d='M'+P[0];for(let i=0;i<n;i++){const a=P[(i-1+n)%n],b=P[i],c=P[(i+1)%n],e=P[(i+2)%n];
+    d+=`C${(b[0]+(c[0]-a[0])/6).toFixed(1)},${(b[1]+(c[1]-a[1])/6).toFixed(1)} ${(c[0]-(e[0]-b[0])/6).toFixed(1)},${(c[1]-(e[1]-b[1])/6).toFixed(1)} ${c[0]},${c[1]}`}return d+'Z'};
+  const mirror=h=>[...h,...h.slice().reverse().filter(p=>p[0]!==0).map(([x,y])=>[-x,y])];
+  const both=s=>`<g>${s}</g><g transform="scale(-1 1)">${s}</g>`;
+  const bone=(ax,ay,bx,by,w,h1,h2)=>{const L=Math.hypot(bx-ax,by-ay),A=Math.atan2(by-ay,bx-ax)*180/Math.PI,s=w/2,a=h1/2,b=(h2||h1)/2;
+    return `<path transform="translate(${ax} ${ay}) rotate(${A.toFixed(2)})" d="M0,${-a}C${L*.1},${-a} ${L*.12},${-s} ${L*.24},${-s}L${L*.76},${-s}C${L*.88},${-s} ${L*.9},${-b} ${L},${-b}A${b},${b} 0 0 1 ${L},${b}C${L*.9},${b} ${L*.88},${s} ${L*.76},${s}L${L*.24},${s}C${L*.12},${s} ${L*.1},${a} 0,${a}A${a},${a} 0 0 1 0,${-a}Z"/>`};
+  const tube=(d,w)=>`<path d="${d}" stroke="currentColor" stroke-width="${w+2.2}"/><path d="${d}" stroke="var(--figfill)" stroke-width="${w}"/><path d="${d}" stroke="currentColor" stroke-width="${w}" opacity=".22"/>`;
+
+  const BODY=[[19,110],[20,128],[23,141],[36,149],[58,156],[78,162],[93,169],[102,183],[106,202],[105,224],[106,248],[109,276],[114,302],[119,322],[124,338],[131,356],[137,380],[141,406],[143,426],[140,433],[133,435],[126,432],[123,412],[118,388],[111,364],[104,342],[98,324],[92,298],[86,270],[80,246],[75,228],[71,238],[69,258],[66,286],[62,312],[61,330],[64,350],[69,372],[73,396],[75,420],[76,448],[75,482],[72,520],[67,556],[62,586],[60,608],[61,630],[64,652],[65,676],[62,708],[56,740],[51,764],[52,778],[56,792],[64,806],[69,817],[62,825],[44,827],[30,824],[26,814],[27,800],[29,786],[28,772],[31,748],[30,716],[25,688],[22,662],[24,636],[27,612],[26,588],[21,558],[15,520],[10,484],[6,452],[2,432]];
+  const HEAD=[[0,20],[14,21.5],[25,29],[31.5,44],[33,60],[32.5,76],[31.5,90],[29,103],[22,114],[11,121],[0,123]];
+  const BRAIN=[[0,25],[11,25.5],[21,31],[27,42],[27,53],[21,61],[10,64],[0,63]];
+
+  /* hand: wrist at origin, fingers toward +y, thumb toward +x */
+  const fingers=[[[11,33],[13,66],7.4],[[3.5,35],[4.5,72],7.8],[[-4.5,35],[-5,68],7.4],[[-12,33],[-14.5,58],6.4]];
+  const palm='M-9,-7L9,-7L15,12L16,35L-16,36L-14,12Z',thumb='M11,6L23,24L27,43';
+  const hand=pass=>{const o=pass===1,c=o?'var(--figline)':'var(--figfill)',x=o?2.4:0;
+    return `<g transform="translate(134.5 431) rotate(-12)" fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round">
+      <path d="${palm}" fill="${c}" stroke-width="${o?2.4:.01}"/>
+      ${fingers.map(([a,b,w])=>`<path d="M${a}L${b}" stroke-width="${w+x}"/>`).join('')}<path d="${thumb}" stroke-width="${9+x}"/>
+      ${o?'':``}</g>`};
+
+  const ribs=[0,1,2,3,4,5,6,7,8,9].map(i=>{const ys=168+i*11.5;if(i<7){const w=[42,51,57,61,63,64,64][i];return `<path d="M6 ${ys}Q${w*.62} ${ys-5} ${w} ${ys+11}"/>`}
+    const x0=12+(i-6)*11,w=64-(i-6)*3;return `<path d="M${x0} ${ys+2+(i-6)*2}Q${(x0+w)/2+4} ${ys-3} ${w} ${ys+9}"/>`}).join('');
+  const gyri='M3 30c5-2 9 1 8 6-1 4 3 6 6 4M14 29c5 2 9 6 9 11M4 42c4-3 9-1 9 3 0 4 5 5 8 2M25 45c-3 3-1 7 3 7M4 52c5-2 8 2 7 5 3 2 7 1 9-2M3 60c4-2 8 0 10 2M18 36c2 3 6 3 7 0';
+  const eye=`<g transform="translate(13 78)"><path d="M-6.5 0Q0-5 6.5 0Q0 3.6 -6.5 0Z" fill="var(--figfill)"/><circle r="2" fill="currentColor" stroke="none"/></g>`;
+
+  return `<g transform="translate(360 0)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <defs><radialGradient id="aur" cx="50%" cy="50%" r="50%"><stop offset="62%" stop-color="var(--c-radiation)" stop-opacity="var(--aura,.1)"/><stop offset="100%" stop-color="var(--c-radiation)" stop-opacity="0"/></radialGradient></defs>
+  <g data-k="radiation"><ellipse cx="0" cy="424" rx="188" ry="420" fill="url(#aur)"/><ellipse class="aura" cx="0" cy="424" rx="178" ry="412" stroke="currentColor" stroke-width="1" stroke-dasharray="1 7"/></g>
+
+  ${both(hand(1))}
+  <g fill="var(--figfill)" stroke="var(--figline)" stroke-width="1.2"><path d="${spline(mirror(BODY))}"/></g>
+  ${both(hand(2))}
+  <g fill="var(--figfill)" stroke="var(--figline)" stroke-width="1.2">
+    ${both('<path d="M32 68c4-3 7 0 6.5 7-.5 7-3 11-6.5 11"/>')}<path d="${spline(mirror(HEAD))}"/></g>
+
+  <!-- surface anatomy -->
+  <g stroke="var(--figline)" stroke-width=".8" opacity=".55">
+    ${both('<path d="M16 122Q12 140 5 153M64 352Q40 392 8 420M36 818v7M44 820v6M52 820v6M59 818v6M30 606q14 -10 27 0M32 628q12 7 24 0M58 440Q46 520 50 584M76 172Q84 204 76 226"/><path d="M5 67q9-5 18-1" />')}
+    <path d="M-4 96q4 3.5 8 0M-2 82L-4 93M2 82L4 93M-9 106q9 3.5 18 0M-5 111q5 2 10 0M0 327a3 3 0 1 0 .1 0"/>
+  </g>
+
+  <!-- skeleton, neutral parts -->
+  <g stroke="var(--figline)" stroke-width=".9" opacity=".6">
+    ${both(ribs+bone(7,160,80,170,2.6,5,5)+'<path d="M3 247Q24 258 55 288" opacity=".7"/>')}
+    <rect x="-5" y="158" width="10" height="88" rx="5" fill="var(--figfill)"/>
+    ${[0,1,2].map(i=>`<rect x="-6" y="${124+i*9}" width="12" height="7" rx="2.5"/>`).join('')}
+  </g>
+
+  <!-- bones and muscle (hip, spine and long bones: where loss is fastest) -->
+  <g data-k="bones" stroke="currentColor" stroke-width="1.1" fill="currentColor" fill-opacity=".07">
+    ${[0,1,2,3,4].map(i=>`<rect x="-9.5" y="${262+i*17.5}" width="19" height="13.5" rx="3.5"/>`).join('')}
+    <path d="M-13 351L13 351L5 392L0 400L-5 392Z"/>
+    ${both(`<path d="M13 353C24 337 52 333 65 349C70 361 62 380 50 392C45 397 42 401 42 408"/><ellipse cx="22" cy="412" rx="10" ry="11" fill="none"/><circle cx="47" cy="403" r="7.5"/>`
+      +bone(88,178,110,326,5,11,10)+bone(119,336,138,424,3,6.5,6)+bone(109,338,128,426,2.6,6,4.5)
+      +bone(60,416,44,592,6.5,11,16)+'<ellipse cx="44" cy="606" rx="6.5" ry="7.5" fill="none"/>'+bone(41,624,38,768,6,15,9)+bone(56,632,50,771,2.6,6,5))}
+  </g>
+
+  <!-- airway and lungs, neutral -->
+  <g stroke="var(--figline)" stroke-width="1" opacity=".75">
+    <path d="M-4.5 126v40M4.5 126v40M-4.5 166Q-8 176 -18 182M4.5 166Q8 176 18 182M-4.5 134h9M-4.5 142h9M-4.5 150h9M-4.5 158h9"/>
+    <path d="M-14 165C-34 161 -58 191 -61 229C-62 247 -60 258 -54 264C-40 255 -22 251 -10 255C-6 230 -6 190 -14 165Z" fill="var(--figline)" fill-opacity=".1"/>
+    <path d="M14 165C34 161 58 191 61 229C62 247 60 258 54 264C46 258 38 254 31 253C36 240 34 224 26 214C20 207 12 204 9 206C7 192 8 176 14 165Z" fill="var(--figline)" fill-opacity=".1"/>
+    <path d="M-58 214Q-36 226 -10 222M-50 250Q-34 236 -16 240M57 222Q44 226 34 222" stroke-width=".7" opacity=".7"/>
+  </g>
+
+  <!-- gut and nutrition -->
+  <g data-k="gut" stroke="currentColor" stroke-width="1.2">
+    <path d="M-58 270C-42 256 -8 255 18 265C12 280 -14 292 -36 298C-52 300 -60 288 -58 270Z" fill="var(--figfill)"/><path d="M-58 270C-42 256 -8 255 18 265C12 280 -14 292 -36 298C-52 300 -60 288 -58 270Z" fill="currentColor" fill-opacity=".2"/>
+    <path d="M-12 258Q-8 276 -22 294" stroke-width=".7" opacity=".7"/>
+    <path d="M6 262C18 258 40 262 45 282C48 300 34 314 16 311C8 309 7 300 14 297C24 294 26 284 19 278C14 274 8 272 6 262Z" fill="var(--figfill)"/><path d="M6 262C18 258 40 262 45 282C48 300 34 314 16 311C8 309 7 300 14 297C24 294 26 284 19 278C14 274 8 272 6 262Z" fill="currentColor" fill-opacity=".2"/>
+    ${tube('M-44 398L-44 334C-44 322 -36 318 -24 320L26 322C40 322 46 328 46 340L46 392C46 404 34 408 22 406C12 404 4 408 2 418',12)}
+    <path d="M-44 398L-44 334C-44 322 -36 318 -24 320L26 322C40 322 46 328 46 340L46 392" stroke-width="10" stroke-dasharray=".9 8" stroke-linecap="butt" opacity=".9"/>
+    ${tube('M-28 337C-14 329 -2 344 10 336C22 328 33 338 30 348C27 358 14 351 4 355C-8 359 -18 349 -28 356C-36 362 -30 372 -18 370C-6 368 4 378 16 372C26 368 34 376 28 385C22 393 8 387 -2 391C-12 395 -22 388 -28 394',5.6)}
+  </g>
+
+  <!-- heart and great vessels -->
+  <g data-k="heart" stroke="currentColor" stroke-width="1.2">
+    <path d="M-10 182v24" stroke-width="6" opacity=".9"/><path d="M-10 182v24" stroke="var(--figfill)" stroke-width="3.6"/>
+    ${tube('M2 206C0 190 4 181 12 181C20 181 23 189 23 199',5.5)}${tube('M10 207C10 197 16 194 23 196',4.5)}
+    <path d="M-8 204C-16 213 -13 233 1 247C10 254 22 252 28 241C34 229 31 213 20 207C12 201 -1 198 -8 204Z" fill="var(--figfill)"/>
+    <path d="M-8 204C-16 213 -13 233 1 247C10 254 22 252 28 241C34 229 31 213 20 207C12 201 -1 198 -8 204Z" fill="currentColor" fill-opacity=".3"/>
+    <path d="M6 205C8 222 16 238 22 246M6 214C0 222 -4 230 -3 238M10 222C16 222 22 226 26 232" stroke-width=".8" opacity=".85"/>
+  </g>
+
+  <!-- immune: lymph nodes, vessels, spleen -->
+  <g data-k="immune" stroke="currentColor" stroke-width="1">
+    <ellipse cx="57" cy="290" rx="8" ry="13" transform="rotate(24 57 290)" fill="var(--figfill)"/><ellipse cx="57" cy="290" rx="8" ry="13" transform="rotate(24 57 290)" fill="currentColor" fill-opacity=".3"/>
+    ${both(`<path d="M17 134L20 146L40 152L68 226L98 300L126 418M27 418L40 600L42 760" stroke-width=".7" stroke-dasharray="1.5 4" opacity=".7"/>`
+      +[[16,133],[20,146],[70,225],[63,236],[74,238],[30,414],[22,423],[37,420]].map(([x,y])=>`<ellipse cx="${x}" cy="${y}" rx="2" ry="2.8" fill="currentColor"/>`).join(''))}
+  </g>
+
+  <!-- mind -->
+  <g data-k="mind" stroke="currentColor" stroke-width="1.1">
+    <path d="${spline(mirror(BRAIN))}" fill="var(--figfill)"/><path d="${spline(mirror(BRAIN))}" fill="currentColor" fill-opacity=".2"/>
+    <path d="M0 25.5V64" stroke-width="1"/>${both(`<path d="${gyri}" stroke-width=".85"/>`)}
+  </g>
+  <!-- eyes -->
+  <g data-k="eyes" stroke="currentColor" stroke-width="1.1">${both(eye)}</g>
+  </g>`};
+</script>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useRef,useMemo,useCallback}=React;
+
+/* ================= data ================= */
+const LIMIT=600;
+const LV=['OK','DRIFT','ACT','ALERT'];
+const LVC=['var(--ok)','var(--drift)','var(--act)','var(--alert)'];
+const lvl=s=>s>=75?3:s>=50?2:s>=25?1:0;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const fx=(n,d=0)=>Number(n).toFixed(d);
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+const rnd=s=>{const x=Math.sin(s*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+
+const ENVS={
+  station:{name:'Space Station',sub:'Low Earth orbit',rate:0.6,gf:1,eye:1,g:'0 g',delay:0.5,co2:3000},
+  lunar:{name:'Lunar Base',sub:'Surface habitat',rate:0.7,gf:.65,eye:.5,g:'0.16 g',delay:2.6,co2:2800},
+  transit:{name:'Mars Transit',sub:'Deep space cruise',rate:1.8,gf:1,eye:1,g:'0 g',delay:2294,co2:3200},
+  rover:{name:'Rover',sub:'Mars surface, pressurized',rate:0.7,gf:.45,eye:.3,g:'0.38 g',delay:1500,co2:3600},
+};
+const HAZ={
+  radiation:{name:'Space radiation',hits:['radiation','immune','mind','eyes','gut']},
+  isolation:{name:'Isolation and confinement',hits:['mind','immune']},
+  distance:{name:'Distance from Earth',hits:['mind','gut']},
+  gravity:{name:'Gravity fields',hits:['bones','heart','eyes']},
+  hostile:{name:'Hostile / closed environment',hits:['mind','immune']},
+};
+const MODULES=[{id:'cockpit',name:'Cockpit',sh:15,x:20,y:60,w:100,h:64},{id:'hab',name:'Habitation',sh:45,x:130,y:46,w:120,h:92},{id:'cargo',name:'Water-Wall Cargo Bay',sh:88,x:260,y:60,w:100,h:64}];
+const REG={
+  mind:{name:'Mind',side:'L',ly:46,ax:344,ay:44,fields:['sleep','stress','mood','fatigue'],
+    why:'Months of confinement, broken sleep, heavy workload and cosmic radiation can each dull mood, focus and reaction speed.',
+    ind:{l:'Reaction time',u:'ms',band:[250,340],base:290,cur:v=>v.rt||295,max:520},keep:['Keep a fixed sleep and wake time','Take one real break every work block','Stay in touch with crew and family']},
+  eyes:{name:'Eyes',side:'R',ly:78,ax:380,ay:78,fields:['blur'],
+    why:'Without gravity, body fluid shifts toward the head and presses on the back of the eye. Many long-duration crew notice blurrier near vision (called SANS).',
+    ind:{l:'Near-vision blur',u:'/5',band:[1,2],base:1,cur:v=>v.blur,max:5},keep:['Do the weekly vision check','Keep adjustable-focus glasses nearby']},
+  heart:{name:'Heart',side:'L',ly:228,ax:364,ay:226,fields:['hr','ex','stress'],
+    why:'In low gravity the heart and blood vessels do less work and lose conditioning. Resting pulse and exercise tolerance show it first.',
+    ind:{l:'Resting heart rate',u:'bpm',band:[50,85],base:64,cur:v=>v.hr,max:160},keep:['Complete the daily cardio session','Log resting pulse each morning']},
+  immune:{name:'Immune',side:'R',ly:204,ax:431,ay:224,fields:['temp','sleep','antiox'],
+    why:'Stress, short sleep and radiation weaken immune defences in space, and dormant viruses can reactivate. Body temperature is the simplest early sign.',
+    ind:{l:'Body temperature',u:'°C',band:[36.2,37.3],base:36.7,cur:v=>v.temp,max:40.5,min:35},keep:['Sleep 7 hours or more','Eat the antioxidant ration','Wipe down shared surfaces']},
+  gut:{name:'Gut & Nutrition',side:'L',ly:356,ax:318,ay:356,fields:['nausea','water','cal'],
+    why:'Thirst and appetite are blunted in space, so crews often under-drink and under-eat. Radiation storms can also bring on nausea within hours.',
+    ind:{l:'Water intake',u:'L',band:[2,3.5],base:2.6,cur:v=>v.water,max:4},keep:['Drink 2 to 3 L of water a day','Eat the full meal plan','Log what you skip']},
+  bones:{name:'Bones & Muscle',side:'R',ly:548,ax:408,ay:548,fields:['ex','cal'],
+    why:'Unloaded bones lose roughly 1% of density a month and muscles shrink unless they are loaded every day with resistive exercise.',
+    ind:{l:'Exercise',u:'min/day',band:[90,150],base:120,cur:v=>v.ex,max:180},keep:['About 2 hours of exercise daily','Load hips and spine: squats, deadlifts','Take vitamin D with meals']},
+  radiation:{name:'Whole-body Radiation',side:'L',ly:700,ax:222,ay:700,fields:[],
+    why:'Beyond Earth’s magnetic field, cosmic rays give a steady background dose and solar storms add sudden spikes. Dose adds up across a whole career (NASA limit: 600 mSv).',
+    keep:['Sleep in the best-shielded module','Wear your dosimeter','Follow ALARA: as low as reasonably achievable']},
+};
+const RK=Object.keys(REG);
+/* camera targets [centre x, centre y, zoom] and close-up crops, in the 720 x 850 plate */
+const ZOOM={mind:[360,46,3.4],eyes:[360,78,4.2],heart:[368,222,3.2],immune:[360,280,1.9],gut:[360,338,2.5],bones:[360,480,1.5],radiation:[360,425,1]};
+const CROP={mind:'306 8 108 68',eyes:'320 56 80 44',heart:'318 168 100 96',immune:'262 112 196 330',gut:'286 244 148 190',bones:'262 250 196 380',radiation:'150 0 420 850'};
+const GUIDE={
+  mind:{ov:'The brain is the body’s control centre: about 86 billion nerve cells that produce thought, memory, mood and movement.',
+    fn:'It takes in signals from the senses, decides what they mean and sends commands to muscles and organs. It also sets sleep, alertness and emotional state.',
+    how:'Nerve cells pass electrical signals along their length and chemical signals across tiny gaps called synapses. Sleep clears waste products and stores the day’s memories, which is why lost sleep slows reaction time so quickly.',
+    facts:['It uses about 20% of the body’s energy at rest while making up about 2% of its weight.','In weightlessness the brain sits slightly higher in the skull and its fluid spaces enlarge.','Station crews take short reaction-time tests to track fatigue.']},
+  eyes:{ov:'Each eye is a fluid-filled sphere about 24 mm across that focuses light onto the retina at the back.',
+    fn:'The cornea and lens bend light into a sharp image, the retina turns it into nerve signals, and the optic nerve carries those to the brain.',
+    how:'The eye holds its shape through the pressure of the fluid inside it. In weightlessness, body fluid shifts toward the head; the back of the eyeball can flatten and the optic nerve head can swell, which pushes focus toward far-sightedness.',
+    facts:['The retina has about 120 million rods and 6 million cones.','Many long-duration crew members show signs of this fluid-shift syndrome, called SANS.','Crews carry adjustable-focus glasses in case their vision changes in flight.','The lens is sensitive to radiation, so cataracts are a known long-term risk.']},
+  heart:{ov:'The heart is a muscular pump about the size of a fist, sitting slightly left of centre in the chest.',
+    fn:'It moves blood through two loops: to the lungs to pick up oxygen, and to the rest of the body to deliver it.',
+    how:'Four chambers contract in sequence, timed by a natural pacemaker in the right atrium, and valves keep the flow one-way. On Earth the heart works against gravity. In weightlessness it works less, blood volume drops and the muscle loses conditioning.',
+    facts:['It beats about 100,000 times a day.','At rest it pumps about 5 litres of blood a minute.','Blood plasma volume falls by roughly 10 to 15% in the first days of spaceflight.','After landing, some crew feel faint on standing until the system readapts.']},
+  immune:{ov:'The immune system is a body-wide defence network: white blood cells, lymph nodes and vessels, the spleen, the thymus and bone marrow.',
+    fn:'It recognises and destroys viruses, bacteria and damaged cells, and it remembers past infections so the next response is faster.',
+    how:'White cells are made in bone marrow and patrol through blood and lymph. Lymph nodes filter that fluid and are where immune cells meet invaders. Stress hormones, lost sleep and radiation all weaken the response.',
+    facts:['Lymph nodes cluster in the neck, armpits and groin, as shown on the figure.','Dormant viruses, such as the ones behind shingles and cold sores, have been found reactivating in astronauts.','Bone marrow is among the most radiation-sensitive tissues in the body.']},
+  gut:{ov:'The digestive tract is a tube about 9 metres long from mouth to rectum, supported by the liver and pancreas.',
+    fn:'It breaks food down, absorbs nutrients and water, and removes waste. The liver processes nutrients and medicines.',
+    how:'The stomach churns food with acid, the small intestine absorbs most nutrients and the large intestine recovers water. Waves of muscle contraction move everything along, so digestion does not depend on gravity.',
+    facts:['The small intestine alone is about 6 metres long.','Trillions of gut bacteria help with digestion and immunity.','Thirst and appetite are blunted in space, so crews eat and drink on a schedule.','The gut lining renews every few days, which makes it sensitive to radiation.']},
+  bones:{ov:'206 bones give the body its frame, and more than 600 muscles move it.',
+    fn:'Bones bear load, protect organs, store calcium and make blood cells. Muscles produce movement and hold posture.',
+    how:'Bone is living tissue that is constantly broken down and rebuilt in response to load. Take the load away and breakdown outpaces rebuilding. Muscle fibres shrink in the same way when they are not worked.',
+    facts:['Weight-bearing bones can lose 1 to 1.5% of their density per month in space.','The hip and lower spine lose the most, which is why they are highlighted on the figure.','Station crews exercise about 2 hours a day to counter this.','Calcium leaving the bones raises the risk of kidney stones.']},
+  radiation:{fnL:'Effect on the body',ov:'Space radiation is made of high-energy particles: galactic cosmic rays from outside the solar system and protons from solar storms.',
+    fn:'It passes through the whole body, so there is no single target organ. The dose adds up over a whole career.',
+    how:'The particles break chemical bonds inside cells, including DNA. Cells repair most of the damage, but repair is imperfect, and mistakes raise long-term cancer risk. Very high doses over a short time cause acute sickness.',
+    facts:['Earth’s magnetic field and atmosphere shield people on the ground.','NASA’s career limit is 600 mSv.','The Curiosity rover’s instrument measured about 1.8 mSv per day on the way to Mars.','Water and polyethylene shield better per kilogram than metal.']},
+};
+const FIELDS={
+  mood:{l:'Mood',min:1,max:5,ends:['Low','Good']},stress:{l:'Stress',min:1,max:5,ends:['Calm','Severe']},
+  fatigue:{l:'Fatigue',min:1,max:5,ends:['Rested','Exhausted']},sleep:{l:'Sleep last night',u:' h',min:0,max:10,step:.5},
+  hr:{l:'Resting heart rate',u:' bpm',min:35,max:170},temp:{l:'Body temperature',u:' °C',min:35.5,max:40.5,step:.1},
+  nausea:{l:'Nausea',min:1,max:5,ends:['None','Severe']},blur:{l:'Near-vision blur',min:1,max:5,ends:['Sharp','Very blurry']},
+  water:{l:'Water today',u:' L',min:0,max:4,step:.25},cal:{l:'Food eaten vs plan',u:'%',min:30,max:110,step:5},
+  antiox:{l:'Fruit / antioxidant servings',min:0,max:5},ex:{l:'Exercise today',u:' min',min:0,max:180,step:10},
+};
+const DEF={mood:4,stress:2,fatigue:2,sleep:7.5,hr:64,temp:36.7,nausea:1,blur:1,water:2.5,cal:95,antiox:3,ex:120,rt:null};
+/* every driver = a symptom or exposure, with the issue name and what to do about it */
+const DR={
+  sleep:{l:'Short sleep',issue:'Severe sleep loss',acts:['Stop safety-critical tasks and hand over to a crewmate','Take a protected 90-minute sleep period now','Dim lights, no caffeine, and plan 8 hours tonight']},
+  stress:{l:'High stress',issue:'Stress overload',acts:['Pause and breathe slowly for 5 minutes (4 s in, 6 s out)','Tell a crewmate how you feel','Request a private conference with family or psych support']},
+  mood:{l:'Low mood',issue:'Low mood',acts:['Talk to a crewmate now; do not isolate','Do 20 minutes of exercise or a favourite activity','Flag it in the next flight surgeon report']},
+  fatigue:{l:'Fatigue',issue:'Heavy fatigue',acts:['Stop safety-critical work','Rest 20 minutes and drink 500 ml of water','Repeat the reaction test after resting']},
+  rt:{l:'Slow reaction time',issue:'Slowed reactions',acts:['Do not pilot, dock or run EVA tasks','Rest 20 minutes, then retest','Check your sleep log and cabin CO₂']},
+  confine:{l:'Time in confinement',issue:'Long confinement',acts:['Keep your daily routine and exercise','Schedule crew social time today','Use the daily check-in to track mood']},
+  gcr:{l:'Accumulated radiation',issue:'High career radiation dose',acts:['Sleep and work in the best-shielded module','Skip non-essential EVAs','Report dose to the flight surgeon']},
+  co2:{l:'Cabin CO₂',issue:'Elevated cabin CO₂',acts:['Check the CO₂ scrubber and increase airflow','Move to a better ventilated module','Report any headache to the crew']},
+  delay:{l:'Comm delay (self-care)',issue:'Autonomous operations',acts:['Use the on-board guidance; do not wait for Earth','Log decisions for the flight surgeon']},
+  blur:{l:'Blurred near vision',issue:'Vision change',acts:['Stop fine visual tasks and switch on Large Text','Run the eye photo check and note which eye','Report the change to the flight surgeon']},
+  sans:{l:'Fluid shift toward the head',issue:'Fluid-shift eye strain',acts:['Use adjustable-focus glasses','Log vision weekly','Keep up exercise countermeasures']},
+  photo:{l:'Eye photo finding',issue:'Eye photo finding',acts:['Repeat the eye photo in good light','Send the image with the surgeon report','Avoid breath-holding lifts until reviewed']},
+  hrhigh:{l:'Fast resting pulse',issue:'Fast heart rate at rest',acts:['Stop activity, secure yourself and breathe slowly','Drink water and recheck pulse in 5 minutes','If still above 120 or you have chest pain, call the crew medical officer']},
+  hrlow:{l:'Very slow pulse',issue:'Very slow heart rate',acts:['Stop activity and stay with a crewmate','Recheck pulse by hand for a full minute','If dizzy or faint, call the crew medical officer']},
+  decond:{l:'Heart deconditioning',issue:'Cardiovascular deconditioning',acts:['Do today’s cardio session','Add interval training this week','Log resting pulse each morning']},
+  noex:{l:'Little exercise today',issue:'Missed exercise',acts:['Do at least a 30-minute session today','Reschedule the missed session','Tell the crew if workload is blocking exercise']},
+  fever:{l:'Raised temperature',issue:'Possible fever',acts:['Rest, and keep distance from crewmates where you can','Drink 500 ml of fluid and recheck temperature in 30 minutes','If 38.5 °C or higher, or getting worse, contact the crew medical officer']},
+  antiox:{l:'Low fruit / antioxidant intake',issue:'Poor nutrition',acts:['Eat a fruit or antioxidant ration now','Plan 3 servings for tomorrow']},
+  closed:{l:'Closed-loop environment',issue:'Closed environment',acts:['Wash hands and wipe shared surfaces','Report odours or visible mould']},
+  storm:{l:'Radiation storm exposure',issue:'Radiation storm exposure',acts:['Move to the Water-Wall Cargo Bay now','Stay sheltered until the dose rate falls','Sip water and report any nausea']},
+  nausea:{l:'Nausea',issue:'Significant nausea',acts:['Sip water slowly and avoid sudden head movement','Take anti-nausea medication per the med-kit checklist (ondansetron 4 mg, Drawer 2)','If vomiting continues, call the crew medical officer']},
+  dehyd:{l:'Low water intake',issue:'Dehydration risk',acts:['Drink 500 ml of water now','Aim for 2 to 3 L today and log each drink','Check urine colour next time; dark means drink more']},
+  cal:{l:'Eating below plan',issue:'Under-eating',acts:['Eat a full meal now, even without appetite','Add a high-calorie snack between meals','Log intake for 3 days']},
+  food:{l:'Ageing food stores',issue:'Nutrient loss in stored food',acts:['Take the vitamin supplement','Prioritise fresh-grown produce if available']},
+  unload:{l:'Bone and muscle unloading',issue:'Bone and muscle loss',acts:['Do resistive exercise today: squats, deadlifts, heel raises','Reach 2 hours of total exercise','Eat full calories plus the vitamin D ration']},
+  career:{l:'Career dose used',issue:'Career radiation limit approaching',acts:['Move sleep station to the best-shielded module','Cancel non-essential EVAs','Send dose record to the flight surgeon']},
+  rate:{l:'Current dose rate',issue:'Radiation storm',acts:['Move to the Water-Wall Cargo Bay now','Stay sheltered until the dose rate falls','Put water and food bags between you and the hull']},
+  skin:{l:'Skin photo finding',issue:'Skin redness',acts:['Photograph the area again in 1 hour','Keep the skin cool and covered','Report with the surgeon report']},
+  hist:{l:'History in health log',issue:'Known history',acts:['Review the related health-log entry','Keep the linked fitness goal on schedule']},
+};
+const HISTMAP={bone:'bones',back:'bones',eye:'eyes',cardio:'heart',immune:'immune'};
+const TAGS={resp:'Respiratory',bone:'Bone',back:'Spine',eye:'Vision',cardio:'Heart',immune:'Immune',flight:'Spaceflight',other:'Other'};
+const CREW0=[
+ {id:'a1',name:'Cmdr. A. Reyes',role:'Commander',age:41,prior:56,log:[
+  {id:1,date:'1995-06-12',tag:'resp',note:'Childhood asthma, mild. Outgrown by age 14.'},
+  {id:2,date:'2006-03-20',tag:'bone',note:'Left wrist fracture (skiing). Healed; bone density scan normal.'},
+  {id:3,date:'2019-09-02',tag:'back',note:'Lower-back strain after centrifuge training. 3 weeks of physiotherapy.'},
+  {id:4,date:'2023-05-14',tag:'flight',note:'Space station mission, 120 days. Career dose after flight: 56 mSv. Mild far-sighted shift.'}]},
+ {id:'a2',name:'Dr. M. Okafor',role:'Mission Specialist',age:37,prior:0,log:[
+  {id:1,date:'2002-11-03',tag:'eye',note:'Short-sightedness diagnosed at 12, corrected with lenses.'},
+  {id:2,date:'2015-07-19',tag:'cardio',note:'Low resting heart rate (48 bpm). Cleared by cardiology: athletic heart.'},
+  {id:3,date:'2022-02-08',tag:'immune',note:'Shingles during an intense training block.'}]},
+ {id:'a3',name:'Lt. J. Tanaka',role:'Pilot',age:44,prior:8,log:[
+  {id:1,date:'2000-08-30',tag:'bone',note:'Vitamin D deficiency in adolescence. Supplemented for 2 years.'},
+  {id:2,date:'2017-01-22',tag:'cardio',note:'Borderline blood pressure. Resolved with training and diet.'},
+  {id:3,date:'2021-10-05',tag:'flight',note:'Short flight (14 days). Career dose after flight: 8 mSv.'}]},
+];
+const GOALDEFS={
+  bone:{id:'bone',label:'Back squat load',unit:'kg',start:60,target:100,why:'Bone entry in health log. Heavy loading slows bone loss.'},
+  back:{id:'back',label:'Side-plank hold',unit:'sec',start:30,target:90,why:'Past back strain. A strong core protects the spine.'},
+  eye:{id:'eye',label:'Weekly vision checks done',unit:'of 4',start:1,target:4,why:'Vision entry in health log. Regular checks catch drift early.'},
+  cardio:{id:'cardio',label:'Treadmill intervals completed',unit:'per week',start:1,target:3,why:'Heart entry in health log. Intervals protect fitness.'},
+  immune:{id:'immune',label:'Average sleep',unit:'h',start:6,target:7.5,why:'Immune entry in health log. Sleep supports immunity.'},
+  resp:{id:'resp',label:'Steady run without stopping',unit:'min',start:15,target:30,why:'Respiratory entry in health log. Builds breathing reserve.'},
+};
+
+/* ================= model ================= */
+function rateScore(e){return e<=1?e*12:e<=5?12+(e-1)*8:e<=20?44+(e-5)*2.4:Math.min(100,80+(e-20)*.7)}
+function assess({v,day,E,H,cum,eff,photo,tags}){
+  const R={};RK.forEach(k=>R[k]=[]);
+  const add=(r,id,pts)=>{if(pts>=1)R[r].push({id,pts})};
+  const f=cum/LIMIT,m=Math.min(1,day/180),exC=Math.min(v.ex,150)/150*.75,storm=eff>5;
+  add('mind','sleep',(7-v.sleep)*12);add('mind','stress',(v.stress-2)*11);add('mind','mood',(3-v.mood)*11);add('mind','fatigue',(v.fatigue-2)*10);
+  if(v.rt)add('mind','rt',Math.min(30,(v.rt-330)/4));
+  if(H.isolation)add('mind','confine',m*18);if(H.radiation)add('mind','gcr',f*20);
+  if(H.hostile)add('mind','co2',(E.co2-3000)/60);if(H.distance&&E.delay>=60)add('mind','delay',6);
+  add('eyes','blur',(v.blur-1)*20);add('eyes','photo',photo.eyes*24);
+  if(H.gravity)add('eyes','sans',m*30*E.eye);if(H.radiation)add('eyes','gcr',f*18);
+  add('heart','hrhigh',(v.hr-95)*1.5);add('heart','hrlow',(45-v.hr)*3);add('heart','stress',(v.stress-2)*4);add('heart','noex',v.ex<30?10:0);
+  if(H.gravity)add('heart','decond',m*30*E.gf*(1-exC));
+  add('immune','fever',(v.temp-37.3)*42);add('immune','sleep',(6-v.sleep)*10);add('immune','stress',(v.stress-2)*5);add('immune','antiox',(3-v.antiox)*4);
+  if(H.radiation){add('immune','gcr',f*30);add('immune','storm',storm?Math.min(35,10+(eff-5)*1.2):0)}
+  if(H.hostile)add('immune','closed',6);
+  add('gut','nausea',(v.nausea-1)*20);add('gut','dehyd',(2-v.water)*24);add('gut','cal',(80-v.cal)*.9);
+  if(H.radiation)add('gut','storm',storm?Math.min(45,15+(eff-5)*1.5):0);
+  if(H.distance&&day>120)add('gut','food',8);
+  if(H.gravity)add('bones','unload',(6+m*55)*E.gf*(1-exC));
+  add('bones','cal',(70-v.cal)*.5);add('bones','noex',v.ex<30?12:0);
+  if(H.radiation){const a=f*90,b=rateScore(eff);add('radiation','career',a>=b?a:a*.3);add('radiation','rate',b>a?b:b*.3);add('radiation','skin',photo.skin*20)}
+  [...new Set(tags.map(t=>HISTMAP[t]).filter(Boolean))].forEach(r=>add(r,'hist',6));
+  const out={};RK.forEach(k=>{const d=R[k].sort((a,b)=>b.pts-a.pts),s=clamp(d.reduce((a,x)=>a+x.pts,0),0,100);out[k]={score:s,lv:lvl(s),drivers:d}});
+  return out;
+}
+function topActs(reg,n=3){const d=reg.drivers;if(!d.length)return[];const A=i=>d[i]?DR[d[i].id].acts:[];
+  const pool=[A(0)[0],d[1]&&d[1].pts>=10?A(1)[0]:null,A(0)[1],A(0)[2],A(1)[0],A(2)[0],A(1)[1]];
+  return [...new Set(pool.filter(Boolean))].slice(0,n)}
+
+/* ================= themes ================= */
+const TH={
+ dark:{lo:{bg:'#1b2740',panel:'#243352',panel2:'#2c3d60',line:'#415784',text:'#e6ebf5',mut:'#a3b3cf',acc:'#8ab6ff'},hi:{bg:'#040b1c',panel:'#0a1630',panel2:'#10203f',line:'#213a66',text:'#f2f5fb',mut:'#93a7c8',acc:'#5b9bff'},st:['#3ecf8e','#f2c94c','#f2994a','#ff6b5e'],on:'#04122b',glyph:'#04122b',a2:'#fc3d21'},
+ light:{lo:{bg:'#cdd4e0',panel:'#dbe1ea',panel2:'#d0d7e3',line:'#a9b4c8',text:'#14213d',mut:'#44536e',acc:'#0b3d91'},hi:{bg:'#f3f5f9',panel:'#ffffff',panel2:'#eaeef5',line:'#c9d2e0',text:'#0a1733',mut:'#47566f',acc:'#0b3d91'},st:['#0a7a55','#8a5a00','#c2410c','#c0281a'],on:'#ffffff',glyph:'#ffffff',a2:'#d6331b'},
+ contrast:{lo:{bg:'#0a0f1a',panel:'#0f1626',panel2:'#16203a',line:'#5a6a8a',text:'#f2f6fc',mut:'#b9c6dc',acc:'#4fe3ff'},hi:{bg:'#000000',panel:'#000000',panel2:'#0d0d0d',line:'#ffffff',text:'#ffffff',mut:'#ffffff',acc:'#ffe600'},st:['#4ade80','#fde047','#fb923c','#ff6b6b'],on:'#000000',glyph:'#000000',a2:'#ff7a66'},
+ night:{lo:{bg:'#140a08',panel:'#1e100c',panel2:'#281610',line:'#4a2a1e',text:'#f0b79a',mut:'#b9806a',acc:'#ff9a5c'},hi:{bg:'#0a0000',panel:'#140202',panel2:'#1c0404',line:'#4a0e0a',text:'#ff6a4a',mut:'#b03a28',acc:'#ff3b2a'},st:['#e0a060','#ff9d3c','#ff7a2a','#ff4433'],on:'#140202',glyph:'#140202',a2:'#ff9a5c'},
+};
+const hx=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const mix=(a,b,t)=>{const A=hx(a),B=hx(b);return '#'+A.map((x,i)=>Math.round(x+(B[i]-x)*t).toString(16).padStart(2,'0')).join('')};
+function applyTheme(mode,str){const T=TH[mode],t=str/100,s=document.documentElement.style;
+  Object.keys(T.lo).forEach(k=>s.setProperty('--'+k,mix(T.lo[k],T.hi[k],t)));
+  ['ok','drift','act','alert'].forEach((k,i)=>s.setProperty('--'+k,T.st[i]));
+  s.colorScheme=mode==='light'?'light':'dark';s.setProperty('--onacc',T.on);s.setProperty('--acc2',T.a2);s.setProperty('--glyph',T.glyph);s.setProperty('--bw',mode==='contrast'&&str>60?'2px':'1px')}
+
+/* ================= small components ================= */
+function Shape({lv,size=18}){const c=LVC[lv],g={stroke:'var(--glyph)',strokeWidth:2.6,fill:'none',strokeLinecap:'round',strokeLinejoin:'round'};
+  return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+   {lv===0&&<g><circle cx="12" cy="12" r="10.5" fill={c}/><path d="M7 12.5l3.3 3.3L17 9" {...g}/></g>}
+   {lv===1&&<g><path d="M12 1l11 11-11 11L1 12z" fill={c}/><path d="M8 12h8" {...g}/></g>}
+   {lv===2&&<g><path d="M12 1.5L23.5 22h-23z" fill={c}/><path d="M12 9v6M12 18.2v.3" {...g}/></g>}
+   {lv===3&&<g><path d="M7.5 1h9L23 7.5v9L16.5 23h-9L1 16.5v-9z" fill={c}/><path d="M8 8l8 8M16 8l-8 8" {...g}/></g>}
+  </svg>}
+const Badge=({lv})=><span className={'badge c'+lv}><Shape lv={lv} size={16}/>{LV[lv]}</span>;
+function Field({k,v,set,pre=''}){const F=FIELDS[k],id=pre+'f_'+k;return <div className="field">
+  <label htmlFor={id}><span>{F.l}</span><b className="mono">{v[k]}{F.u||''}</b></label>
+  <input id={id} type="range" min={F.min} max={F.max} step={F.step||1} value={v[k]} onChange={e=>set(k,+e.target.value)}/>
+  {F.ends&&<div className="ends"><span>{F.ends[0]}</span><span>{F.ends[1]}</span></div>}</div>}
+function Chart({data,lines,yMax,yMin=0,limit,band,title,h=170}){
+  const W=420,H=h,p={l:40,r:10,t:10,b:22},x1=Math.max(1,data[data.length-1].d);
+  const X=v=>p.l+v/x1*(W-p.l-p.r),Y=v=>H-p.b-clamp((v-yMin)/(yMax-yMin),0,1)*(H-p.t-p.b);
+  return <figure style={{margin:0}}><svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={title}>
+    {band&&<rect x={p.l} width={W-p.l-p.r} y={Y(band[1])} height={Y(band[0])-Y(band[1])} fill="var(--ok)" opacity=".12"/>}
+    {[0,.5,1].map(t=>{const v=yMin+t*(yMax-yMin);return <g key={t}><line x1={p.l} x2={W-p.r} y1={Y(v)} y2={Y(v)} stroke="var(--line)"/><text x={p.l-6} y={Y(v)+4} textAnchor="end" fontSize="10" fill="var(--mut)" className="mono">{yMax-yMin<12?fx(v,1):Math.round(v)}</text></g>})}
+    {[0,.5,1].map(t=><text key={t} x={X(x1*t)} y={H-6} textAnchor={t===0?'start':t===1?'end':'middle'} fontSize="10" fill="var(--mut)" className="mono">day {Math.round(x1*t)}</text>)}
+    {limit&&<g><line x1={p.l} x2={W-p.r} y1={Y(limit.v)} y2={Y(limit.v)} stroke="var(--alert)" strokeDasharray="3 4" strokeWidth="1.5"/><text x={W-p.r} y={Y(limit.v)+13} textAnchor="end" fontSize="10" fill="var(--alert)" fontWeight="700">{limit.l}</text></g>}
+    {lines.map(l=><polyline key={l.k} fill="none" stroke={l.c} strokeWidth="2" strokeDasharray={l.dash} strokeLinejoin="round" points={data.map(d=>X(d.d)+','+Y(d[l.k])).join(' ')}/>)}
+   </svg>
+   <figcaption className="row sub" style={{gap:14,fontSize:'.75rem'}}>{lines.map(l=><span key={l.k} className="row" style={{gap:6}}><svg width="22" height="6"><line x1="0" x2="22" y1="3" y2="3" stroke={l.c} strokeWidth="2.5" strokeDasharray={l.dash}/></svg>{l.n}</span>)}{band&&<span className="row" style={{gap:6}}><svg width="14" height="8"><rect width="14" height="8" fill="var(--ok)" opacity=".3"/></svg>baseline band</span>}</figcaption></figure>}
+
+/* ================= anatomy figure ================= */
+const ANAT={__html:window.anatomySVG()};
+const FIGCSS=RK.map(k=>`.anat [data-k=${k}]{color:var(--c-${k})}.anat[data-sel=${k}] [data-k=${k}]{opacity:1;filter:drop-shadow(0 0 5px currentColor)}`).join('');
+function Guide({k}){const G=GUIDE[k];return <div className="guide">
+  <span className="lbl">Overview</span><p>{G.ov}</p><span className="lbl">{G.fnL||'Function'}</span><p>{G.fn}</p>
+  <span className="lbl">How it works</span><p>{G.how}</p><span className="lbl">Key facts</span><ul>{G.facts.map(f=><li key={f}>{f}</li>)}</ul>
+  <span className="lbl">In space</span><p>{REG[k].why}</p></div>}
+function Figure({A,sel,pick,scanKey,hl,repair}){
+  const vars={'--aura':(.03+.1*repair/100).toFixed(3)};RK.forEach(k=>{vars['--c-'+k]=LVC[A[k].lv]});
+  const z=sel?ZOOM[sel]:null,zoomed=!!z&&z[2]>1;
+  const cam={transform:zoomed?`translate(${(50-z[2]*z[0]/7.2).toFixed(2)}%,${(50-z[2]*z[1]/8.5).toFixed(2)}%) scale(${z[2]})`:'translate(0%,0%) scale(1)'};
+  return <div className={'fig anat'+(zoomed?' zoomed':'')} style={vars} data-sel={sel||'none'} onClick={e=>{if(sel&&!e.target.closest('[data-k],button'))pick(null)}}>
+   <style>{FIGCSS}</style>
+   <div className="cam" style={cam}>
+   <svg viewBox="0 0 720 850" role="img" aria-label="Anatomical diagram of the selected astronaut with seven monitored body systems">
+    <g dangerouslySetInnerHTML={ANAT} onClick={e=>{const g=e.target.closest('[data-k]');if(g)pick(g.getAttribute('data-k'))}}/>
+    {RK.map(k=>{const r=REG[k],x0=r.side==='L'?166:554,on=sel===k;return <g key={k} className="lead" stroke={on?'var(--acc)':'var(--figline)'} strokeWidth={on?1.4:.9} fill="none" opacity={on?1:.8}>
+      <path d={`M${x0} ${r.ly}L${r.side==='L'?x0+20:x0-20} ${r.ly}L${r.ax} ${r.ay}`}/><circle cx={r.ax} cy={r.ay} r="2.4" fill={on?'var(--acc)':'var(--figline)'} stroke="none"/></g>})}
+   </svg>
+   {RK.map(k=>{const r=REG[k],a=A[k];return <button key={k} className={`call ${r.side} ${scanKey===k?'scan':''} ${hl.includes(k)?'hl':''}`} style={{top:r.ly/850*100+'%'}} aria-pressed={sel===k} aria-label={`${r.name}: ${LV[a.lv]}`} onClick={()=>pick(k)}>
+     <Shape lv={a.lv} size={20}/><span><b>{r.name}</b><small className={'c'+a.lv}>{LV[a.lv]}</small></span></button>})}
+   </div>
+   {sel&&<div className="figbar"><button className="btn sm pri" onClick={()=>pick(null)}>Reset view</button>
+     {RK.map(k=><button key={k} className="btn sm" aria-pressed={sel===k} aria-label={'View '+REG[k].name} onClick={()=>pick(k)}>{REG[k].name.split(' ')[0]}</button>)}</div>}
+  </div>}
+
+/* ================= tools ================= */
+function ReactionTest({onDone}){
+  const [st,setSt]=useState('idle'),[pos,setPos]=useState(null),[left,setLeft]=useState(10),[res,setRes]=useState(null);
+  const t0=useRef(0),box=useRef(null),end=useRef(0),tick=useRef(),tm=useRef([]);
+  const spawn=()=>{if(!box.current)return;const r=box.current.getBoundingClientRect();setPos({x:Math.random()*(r.width-56),y:Math.random()*(r.height-56)});t0.current=performance.now()};
+  const start=()=>{tm.current=[];setRes(null);setSt('run');setLeft(10);end.current=performance.now()+10000;setTimeout(spawn,60);
+    tick.current=setInterval(()=>{setLeft(Math.max(0,Math.ceil((end.current-performance.now())/1000)));
+      if(performance.now()>=end.current){clearInterval(tick.current);setSt('done');setPos(null);const n=tm.current.length,a=n?Math.round(tm.current.reduce((x,y)=>x+y,0)/n):null;setRes({a,n});if(a)onDone(a)}},200)};
+  useEffect(()=>()=>clearInterval(tick.current),[]);
+  return <div><div className="row sp"><span className="lbl">10-second reaction test</span><span className="chip mono">{st==='run'?left+' s':'tap each target'}</span></div>
+   <div ref={box} style={{position:'relative',height:160,border:'var(--bw) dashed var(--line)',borderRadius:6,marginTop:8,background:'var(--panel2)',overflow:'hidden',display:'grid',placeItems:'center'}}>
+    {st!=='run'&&<div style={{textAlign:'center'}}>{res&&<div className="mono" style={{fontSize:'1.4rem',marginBottom:6}}>{res.a??'no taps'}{res.a?' ms':''}<span className="sub"> · {res.n} taps</span></div>}<button className="btn pri" onClick={start}>{st==='done'?'Run again':'Start test'}</button></div>}
+    {st==='run'&&pos&&<button className="target" aria-label="Target" style={{left:pos.x,top:pos.y}} onPointerDown={()=>{tm.current.push(Math.round(performance.now()-t0.current));spawn()}}/>}
+   </div></div>}
+const PHOTO={eyes:['No swelling pattern seen.','Mild swelling pattern at the back of the eye. Keep watching.','Marked swelling pattern. Send to the flight surgeon.'],skin:['Skin looks normal.','Faint redness. Recheck in 1 hour.','Strong redness over a wide area. Treat as possible radiation skin injury.']};
+function PhotoCheck({kind,val,set}){const [busy,setBusy]=useState(false),[msg,setMsg]=useState(null),[cam,setCam]=useState(false),[shot,setShot]=useState(null);
+  const what=kind==='eyes'?'eye':'skin';
+  const run=(seed,img)=>{setBusy(true);setShot(img||null);setMsg(null);setTimeout(()=>{const r=seed%3;set(r);setMsg(PHOTO[kind][r]);setBusy(false)},1100)};
+  return <div><div className="row sp"><span className="lbl">{what} photo check</span><span className="chip">simulated analyzer</span></div>
+   <div className="row" style={{marginTop:8}}><button className="btn sm pri" onClick={()=>setCam(true)}>Take {what} photo</button>
+    <button className="btn sm" onClick={()=>run(1)}>Use test sample</button>{(val>0||shot||msg)&&<button className="btn sm" onClick={()=>{set(0);setMsg(null);setShot(null)}}>Clear photo</button>}{busy&&<span className="sub">Analysing…</span>}</div>
+   {(shot||msg)&&<div className="row" style={{marginTop:10,flexWrap:'nowrap',alignItems:'flex-start'}}>
+     {shot&&<img src={shot} alt={`Submitted ${what} photo`} style={{width:96,height:72,objectFit:'cover',borderRadius:4,border:'var(--bw) solid var(--line)',flex:'none'}}/>}
+     {msg&&<span className="row" style={{flexWrap:'nowrap',alignItems:'flex-start',fontSize:'.88rem'}}><Shape lv={val===2?3:val}/><span>{shot?'Photo submitted. ':''}{msg}</span></span>}</div>}
+   {cam&&<Camera what={what} facing={kind==='eyes'?'user':'environment'} onClose={()=>setCam(false)} onSubmit={(img,seed)=>{setCam(false);run(seed,img)}}/>}</div>}
+/* live camera: preview, capture, confirm, then submit */
+function Camera({what,facing,onClose,onSubmit}){
+  const vid=useRef(),stream=useRef(null),[st,setSt]=useState('starting'),[snap,setSnap]=useState(null),[err,setErr]=useState('');
+  const stop=()=>{if(stream.current){stream.current.getTracks().forEach(x=>x.stop());stream.current=null}};
+  const start=async()=>{setErr('');setSnap(null);setSt('starting');
+    try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('This page cannot reach the camera. Start the app with Start-RadShield.bat and use Edge or Chrome.');
+      let s;try{s=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280}},audio:false})}catch(e){if(e.name==='OverconstrainedError')s=await navigator.mediaDevices.getUserMedia({video:true,audio:false});else throw e}
+      stream.current=s;setSt('live')}
+    catch(e){setErr(e.name==='NotAllowedError'?'Camera permission was refused. Allow the camera for this page, then try again.':e.name==='NotFoundError'?'No camera was found on this device.':e.name==='NotReadableError'?'The camera is in use by another app. Close it, then try again.':(e.message||'The camera could not be started.'));setSt('error')}};
+  useEffect(()=>{start();return stop},[]);
+  useEffect(()=>{if(st==='live'&&vid.current&&stream.current){vid.current.srcObject=stream.current;const p=vid.current.play();if(p&&p.catch)p.catch(()=>{})}},[st]);
+  const capture=()=>{const v=vid.current;if(!v||!v.videoWidth)return;const c=document.createElement('canvas'),w=Math.min(960,v.videoWidth);c.width=w;c.height=Math.round(w*v.videoHeight/v.videoWidth);
+    const g=c.getContext('2d');g.drawImage(v,0,0,c.width,c.height);let sum=1;try{const d=g.getImageData(0,0,c.width,c.height).data;for(let i=0;i<d.length;i+=4003)sum+=d[i]}catch(e){}
+    setSnap({url:c.toDataURL('image/jpeg',.85),seed:sum});stop();setSt('review')};
+  /* self-test hooks for automated checks: #camtest captures, #camtest2 also confirms */
+  useEffect(()=>{const h=location.hash;if(!h.includes('camtest'))return;let t;
+    if(st==='live')t=setTimeout(capture,900);if(st==='review'&&snap&&h.includes('camtest2'))t=setTimeout(()=>onSubmit(snap.url,snap.seed),600);return()=>clearTimeout(t)},[st,snap]);
+  return <div className="modal" role="dialog" aria-modal="true" aria-label={`Take ${what} photo`}><div className="card" style={{width:'min(680px,100%)'}}>
+    <div className="row sp" style={{marginBottom:10}}><span className="lbl">{what} photo · {st==='review'?'step 2 of 2: confirm':'step 1 of 2: capture'}</span><button className="btn sm" onClick={()=>{stop();onClose()}}>Cancel</button></div>
+    {st==='starting'&&<p className="sub" role="status">Starting camera. If the browser asks, choose Allow.</p>}
+    {st==='error'&&<div><p className="note al" role="alert">{err}</p><div className="row" style={{marginTop:12}}><button className="btn pri" onClick={start}>Try again</button></div></div>}
+    {st==='live'&&<div><video ref={vid} className="camview" autoPlay playsInline muted/>
+      <p className="sub" style={{margin:'8px 0'}}>{what==='eye'?'Hold the camera level with one eye, about a hand\u2019s width away, in good light.':'Frame the area of skin so it fills the picture, in good light.'}</p>
+      <button className="btn pri" style={{width:'100%'}} onClick={capture}>Capture photo</button></div>}
+    {st==='review'&&snap&&<div><img src={snap.url} alt={`Captured ${what} photo`} className="camview"/>
+      <p style={{margin:'10px 0'}}>Is this photo sharp and well lit?</p>
+      <div className="row"><button className="btn pri" onClick={()=>onSubmit(snap.url,snap.seed)}>Use this photo</button><button className="btn" onClick={start}>Retake</button></div></div>}
+  </div></div>}
+/* hyperspace streaks while the camera travels to a body system */
+function Warp({k}){const ref=useRef();
+  useEffect(()=>{const cv=ref.current;if(!k||!cv)return;const freeze=location.hash.includes('warpfreeze');
+    if(!freeze&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    const fig=document.querySelector('.fig'),rc=fig?fig.getBoundingClientRect():{left:innerWidth/2,top:innerHeight/2,width:0,height:0};
+    const W=cv.width=innerWidth,H=cv.height=innerHeight,cx=rc.left+rc.width/2,cy=Math.min(H,rc.top+rc.height/2),g=cv.getContext('2d');
+    const cs=getComputedStyle(document.documentElement),c1=cs.getPropertyValue('--text').trim()||'#fff',c2=cs.getPropertyValue('--acc').trim()||'#5b9bff';
+    const R=Math.hypot(Math.max(cx,W-cx),Math.max(cy,H-cy));
+    const S=Array.from({length:260},(_,i)=>({a:Math.random()*6.2832,r:24+Math.pow(Math.random(),.7)*R*.8,w:.5+Math.random()*1.6,c:i%3===0?c2:c1,s:.6+Math.random()*.9}));
+    const T=950,t0=performance.now();let raf;g.lineCap='round';
+    const frame=now=>{const p=freeze?.5:Math.min(1,(now-t0)/T),e=Math.sin(p*Math.PI);g.clearRect(0,0,W,H);
+      S.forEach(s=>{const r1=s.r*(1+p*1.7*s.s),len=e*e*s.r*.7*s.s+1,ca=Math.cos(s.a),sa=Math.sin(s.a);
+        g.strokeStyle=s.c;g.globalAlpha=e*.8;g.lineWidth=s.w*(.5+r1/R);g.beginPath();g.moveTo(cx+ca*r1,cy+sa*r1);g.lineTo(cx+ca*(r1+len),cy+sa*(r1+len));g.stroke()});
+      if(p<1&&!freeze)raf=requestAnimationFrame(frame);else if(!freeze)g.clearRect(0,0,W,H)};
+    raf=requestAnimationFrame(frame);return()=>{cancelAnimationFrame(raf);g.clearRect(0,0,W,H)}},[k]);
+  return <canvas ref={ref} className="warp" aria-hidden="true"/>}
+/* assistant voices: eight names, each mapped to a different system voice where the browser has one */
+const PERSONAS=[{n:'Nova',g:'f',pitch:1.05,rate:1.02},{n:'Orion',g:'m',pitch:.9,rate:1},{n:'Luna',g:'f',pitch:1.2,rate:.97},{n:'Atlas',g:'m',pitch:.72,rate:.95},{n:'Vega',g:'f',pitch:.92,rate:1.08},{n:'Juno',g:'f',pitch:1.1,rate:.9},{n:'Sol',g:'m',pitch:1.02,rate:1.08},{n:'Lyra',g:'f',pitch:1.32,rate:1.04}];
+function voiceFor(i){let all=[];try{all=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang))}catch(e){}if(!all.length)return null;
+  const isF=v=>/zira|aria|jenny|michelle|sonia|libby|natasha|clara|emma|ava|samantha|susan|hazel|female|ana\b|sara|nancy|amber|ashley|cora|elizabeth|jane|monica|maisie|molly|neerja|leah|mia|catherine|heera|linda|google us english/i.test(v.name);
+  const p=PERSONAS[i],F=all.filter(isF),M=all.filter(v=>!isF(v)),pool=(p.g==='f'?F:M).length?(p.g==='f'?F:M):all;
+  return pool[PERSONAS.slice(0,i).filter(x=>x.g===p.g).length%pool.length]}
+function ShelterMap({loc,setLoc,storm}){return <svg viewBox="0 0 380 170" width="100%" role="group" aria-label="Spacecraft shielding map">
+  <path d="M120 92h10M250 92h10" stroke="var(--mut)" strokeWidth="3"/>
+  {MODULES.map(m=>{const safe=m.id==='cargo',here=loc===m.id;return <g key={m.id} tabIndex={0} role="button" aria-label={`${m.name}, ${m.sh}% shielding${here?', you are here':''}. Move here.`} style={{cursor:'pointer'}} onClick={()=>setLoc(m.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();setLoc(m.id)}}}>
+    <rect x={m.x} y={m.y} width={m.w} height={m.h} rx="5" fill={here?'var(--panel2)':'var(--panel)'} stroke={safe?'var(--ok)':here?'var(--acc)':'var(--line)'} strokeWidth={safe&&storm?3:1.5}/>
+    <text x={m.x+m.w/2} y={m.y+22} textAnchor="middle" fontSize="11" fill="var(--text)" fontWeight="600">{safe?'Water-Wall':m.name}</text>
+    {safe&&<text x={m.x+m.w/2} y={m.y+35} textAnchor="middle" fontSize="11" fill="var(--text)" fontWeight="600">Cargo Bay</text>}
+    <text x={m.x+m.w/2} y={m.y+m.h-10} textAnchor="middle" fontSize="11" fill={safe?'var(--ok)':'var(--mut)'} className="mono">{m.sh}% shielding</text>
+    {here&&<text x={m.x+m.w/2} y={m.y-8} textAnchor="middle" fontSize="10" fill="var(--acc)" fontWeight="700" letterSpacing="1">YOU ARE HERE</text>}
+    {safe&&<text x={m.x+m.w/2} y={m.y+m.h+16} textAnchor="middle" fontSize="10" fill="var(--ok)" fontWeight="700" letterSpacing="1">SAFEST ZONE</text>}
+  </g>})}</svg>}
+
+/* ================= workout routine ================= */
+function buildRoutine(A,tags,sheltering){
+  const has=(r,id,min=8)=>A[r].drivers.some(d=>d.id===id&&d.pts>=min),B=[];
+  if(has('immune','fever'))return {rest:true,blocks:[{t:'Rest day',min:15,why:'Raised temperature today. Training with a fever slows recovery, so the session is replaced.',items:[['Gentle mobility, in bunk','10 min'],['Paced breathing, 4 s in / 6 s out','5 min'],['Fluids','500 ml every 2 hours']]}]};
+  if(sheltering)return {blocks:[{t:'Shelter circuit, inside the Cargo Bay',min:25,why:'Radiation storm in progress. The treadmill and resistive device are outside the shelter, so today uses bands only.',items:[['Band squat','3 × 15'],['Band row','3 × 15'],['Strap push-up','3 × 12'],['Plank','3 × 45 s'],['Band pull-apart','3 × 20']]}]};
+  const easy=A.gut.lv>=2||has('heart','hrhigh')||has('mind','sleep',20);
+  B.push({t:'Warm-up',min:10,items:[['Cycle ergometer, easy spin','5 min'],['Mobility: hips, shoulders, ankles','5 min']]});
+  let res=A.bones.lv>=1?{t:'Resistive: bone-loading focus',min:45,why:'Bones & Muscle is at '+LV[A.bones.lv]+'. Heavier, lower-rep lifts load the hip and spine where loss is fastest.',items:[['Back squat','4 × 6, heavy'],['Deadlift','4 × 6, heavy'],['Single-leg heel raise','4 × 12 per side'],['Shoulder press','3 × 8']]}
+    :{t:'Resistive: maintenance',min:40,items:[['Back squat','3 × 10'],['Deadlift','3 × 8'],['Heel raise','3 × 15'],['Bench press','3 × 10']]};
+  if(tags.includes('back')){res.items=res.items.map(i=>i[0]==='Deadlift'?['Romanian deadlift, light, neutral spine',' 3 × 10']:i);res.why=(res.why?res.why+' ':'')+'Deadlift swapped for a lighter variation because of the back strain in the health log.'}
+  if(A.eyes.lv>=2){res.items=res.items.map(i=>[i[0],i[1].replace(', heavy','')+', about 70% load']);res.why=(res.why?res.why+' ':'')+'Eyes at '+LV[A.eyes.lv]+': load is capped and you should breathe out on every lift. Breath-holding raises pressure in the head.'}
+  if(easy){res.min=25;res.items=res.items.slice(0,2).map(i=>[i[0],'2 × 10, light']);res.why='Kept short and light today because of '+(A.gut.lv>=2?'gut symptoms':has('heart','hrhigh')?'a fast resting pulse':'severe sleep loss')+'.'}
+  B.push(res);
+  if(tags.includes('back'))B.push({t:'Core and spine',min:10,why:'From the health log: past lower-back strain.',items:[['Bird-dog','3 × 10 per side'],['Side plank','3 × 30 s per side'],['Dead bug','3 × 10']]});
+  if(easy)B.push({t:'Cardio: low intensity only',min:15,why:A.gut.lv>=2?'Nausea or low fluids today. Drink 500 ml first and stop if nausea rises.':has('heart','hrhigh')?'Resting pulse is high. Stay easy and recheck pulse afterwards.':'Very short sleep. Hard intervals on no sleep raise injury risk.',items:[['Cycle ergometer, easy','15 min, under 60% of max heart rate']]});
+  else if(A.heart.lv>=1)B.push({t:'Cardio: treadmill intervals',min:33,why:'Heart is at '+LV[A.heart.lv]+'. Short hard intervals rebuild fitness faster than steady running.',items:[['Treadmill, hard','4 × 4 min at 85 to 90% of max heart rate'],['Treadmill, easy between efforts','3 min each'],['Cool-down walk','5 min']]});
+  else B.push({t:'Cardio: steady',min:30,items:[['Treadmill, steady','30 min at about 70% of max heart rate']]});
+  if(A.mind.lv>=1)B.push({t:'Recovery for mind',min:15,why:'Mind is at '+LV[A.mind.lv]+(has('mind','sleep')?'. Finish training at least 3 hours before sleep.':'. Slow movement and breathing lower stress hormones.'),items:[['Stretch and mobility flow','10 min'],['Paced breathing, 4 s in / 6 s out','5 min']]});
+  return {blocks:B}}
+
+/* ================= app ================= */
+function App(){
+  const [env,setEnv]=useState('transit'),E=ENVS[env];
+  const [H,setH]=useState({radiation:true,isolation:true,distance:true,gravity:true,hostile:true}),[hov,setHov]=useState(null);
+  const [day,setDay]=useState(14),[flares,setFlares]=useState([]),[rateMan,setRateMan]=useState(null),[spe,setSpe]=useState(null),[loc,setLoc]=useState('hab');
+  const [crew,setCrew]=useState(()=>load('rs2_crew',CREW0)),[crewId,setCrewId]=useState('a1');
+  const [vits,setVits]=useState({}),[photos,setPhotos]=useState({}),[done,setDone]=useState({});
+  const [sel,setSel]=useState(null),[tab,setTab]=useState('monitor'),[ack,setAck]=useState({}),[checkin,setCheckin]=useState(null),[checkins,setCheckins]=useState([]);
+  const [mode,setMode]=useState('dark'),[str,setStr]=useState(100),[large,setLarge]=useState(false),[scan,setScan]=useState(false),[scanIdx,setScanIdx]=useState(0),[voice,setVoice]=useState(()=>load('rs2_voice',false)),[heard,setHeard]=useState('');
+  const [persona,setPersona]=useState(()=>clamp(load('rs2_persona',0),0,PERSONAS.length-1)),[warpN,setWarpN]=useState(0),[speakOn,setSpeakOn]=useState(true),[ptab,setPtab]=useState('status'),[mic,setMic]=useState('off');
+  const speaking=useRef(false),speakRef=useRef(true),micStream=useRef(null),personaRef=useRef(0),firstSel=useRef(true);speakRef.current=speakOn;personaRef.current=persona;
+  useEffect(()=>{try{speechSynthesis.getVoices()}catch(e){}},[]);
+  useEffect(()=>{if(firstSel.current){firstSel.current=false;return}setWarpN(n=>n+1)},[sel]);
+  /* assistant voice: shows the reply and reads it aloud; the recogniser ignores input while it is talking */
+  const say=useCallback((text,force)=>{if((!speakRef.current&&!force)||!window.speechSynthesis)return;
+    try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text),P=PERSONAS[personaRef.current],vc=voiceFor(personaRef.current);if(vc)u.voice=vc;u.pitch=P.pitch;u.rate=P.rate;speaking.current=true;u.onend=u.onerror=()=>setTimeout(()=>{speaking.current=false},600);speechSynthesis.speak(u)}catch(e){speaking.current=false}},[]);
+  const hush=()=>{try{speechSynthesis.cancel()}catch(e){};speaking.current=false};
+  const pickVoice=i=>{setPersona(i);personaRef.current=i;save('rs2_persona',i);say('Hello, my name is '+PERSONAS[i].n+'.',true)};
+  const [gp,setGp]=useState(()=>load('rs2_goals',{})),[sess,setSess]=useState({}),[toasts,setToasts]=useState([]),[now,setNow]=useState(Date.now()),[jit,setJit]=useState(0);
+  const [wx,setWx]=useState({mode:'sim',events:[],loading:false,msg:''});
+
+  const c=crew.find(x=>x.id===crewId),v=vits[crewId]||DEF,photo=photos[crewId]||{eyes:0,skin:0};
+  const set=(k,val)=>setVits(s=>({...s,[crewId]:{...(s[crewId]||DEF),[k]:val}}));
+  const toast=useCallback(m=>{const id=Math.random();setToasts(t=>[...t,{id,m}]);setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),6000)},[]);
+  useEffect(()=>{applyTheme(mode,str)},[mode,str]);
+  useEffect(()=>{document.documentElement.dataset.large=large},[large]);
+  useEffect(()=>save('rs2_crew',crew),[crew]);useEffect(()=>save('rs2_goals',gp),[gp]);
+  useEffect(()=>{const i=setInterval(()=>{setNow(Date.now());setJit(j=>clamp(j+Math.round((Math.random()-.5)*6),-60,60))},1000);return()=>clearInterval(i)},[]);
+  useEffect(()=>{if(spe&&spe.until<=now){setSpe(null);setRateMan(null);toast('Solar particle event has passed. Dose rate back to background.')}},[now,spe]);
+
+  /* physics */
+  const R=rateMan??E.rate,mod=MODULES.find(m=>m.id===loc);
+  const eff=H.radiation?R*(1-mod.sh/100)/.55:0;
+  const cum=c.prior+E.rate*day+flares.reduce((a,f)=>a+f.mSv,0);
+  const tags=useMemo(()=>[...new Set(c.log.map(e=>e.tag))],[c]);
+  const A=useMemo(()=>assess({v,day,E,H,cum,eff,photo,tags}),[v,day,E,H,cum,eff,photo,tags]);
+  const doneN=Object.values(done).filter(Boolean).length;
+  const repair=clamp(58+(v.sleep-6)*4+(v.antiox-3)*3+doneN*3-(cum/LIMIT)*25-(eff>5?15:0),5,100);
+  const rising=H.radiation&&(eff>=3||R>E.rate*1.5);
+
+  /* urgent pop-up: worst un-acknowledged ALERT region */
+  const urgent=useMemo(()=>{const r=RK.filter(k=>A[k].lv===3&&A[k].drivers[0]&&ack[k]!==A[k].drivers[0].id).sort((a,b)=>A[b].score-A[a].score);
+    if(!r.length)return null;const k=r[0];return {k,d:A[k].drivers[0],acts:topActs(A[k]),others:RK.filter(x=>x!==k&&A[x].lv===3)}},[A,ack]);
+  useEffect(()=>{setAck(a=>{const n={};let ch=false;Object.keys(a).forEach(k=>{if(A[k].lv===3)n[k]=a[k];else ch=true});return ch?n:a})},[A]);
+  useEffect(()=>{setAck({})},[crewId]);
+  const doAck=()=>{if(urgent){setAck(a=>({...a,[urgent.k]:urgent.d.id}));setSel(urgent.k);setTab('monitor')}};
+
+  /* scan + keyboard */
+  useEffect(()=>{if(!scan)return;const i=setInterval(()=>setScanIdx(x=>(x+1)%RK.length),1800);return()=>clearInterval(i)},[scan]);
+  useEffect(()=>{const h=e=>{if(e.key==='Escape'){if(urgent)doAck();else if(checkin!==null)setCheckin(null);return}
+     if(!scan||e.code!=='Space')return;if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;e.preventDefault();
+     if(urgent)doAck();else{setSel(RK[scanIdx]);setTab('monitor')}};
+    window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)});
+
+  /* voice commands */
+  const cmd=useRef();cmd.current=t=>{t=t.toLowerCase().trim().replace(/[.!?]+$/,'');setHeard(t);
+    const pi=PERSONAS.findIndex(p=>new RegExp('\\b'+p.n.toLowerCase()+'\\b').test(t));if(pi>=0){setSpeakOn(true);speakRef.current=true;pickVoice(pi);return}
+    if(!['mind','brain','eye','eyes','heart','immune','gut','bone','bones','muscle','radiation','status','help','fitness','trends'].includes(t)&&pressByVoice(t,true))return;
+    const EV=[['station',/space station|\bstation\b|low earth orbit/],['lunar',/\blunar\b|\bmoon\b/],['transit',/mars transit|\btransit\b|deep space/],['rover',/\brover\b/]].find(x=>x[1].test(t));
+    if(EV&&!/\d/.test(t)){setEnv(EV[0]);setRateMan(null);say('Environment set to '+ENVS[EV[0]].name+'. Background dose rate '+ENVS[EV[0]].rate+' millisieverts per day.');return}
+    /* sliders by voice: "stress 4", "set temperature to 39.2", "radiation 50 percent", "increase sleep", "strength maximum" */
+    const NW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90,hundred:100};
+    const q=t.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)\b/g,w=>NW[w]).replace(/(\d+)\s*point\s*(\d+)/g,'$1.$2');
+    const SL=[['hr',['heart rate','pulse']],['day',['mission day','day']],['temp',['temperature','temp','fever']],['mood',['mood']],['stress',['stress']],['fatigue',['fatigue','tired']],['sleep',['sleep']],['nausea',['nausea']],['blur',['blur','vision']],['water',['water','hydration']],['cal',['food','calorie']],['antiox',['fruit','antioxidant']],['ex',['exercise']],['rate',['radiation','dose rate']],['str',['strength','intensity','brightness']]];
+    const hit=SL.find(([k,ws])=>ws.some(w=>new RegExp('\\b'+w).test(q)));
+    const nm=q.match(/-?\d+(\.\d+)?/),has=w=>new RegExp('\\b('+w+')\\b').test(q);
+    const dir=has('increase|raise|up|higher|more')?1:has('decrease|lower|down|reduce|less')?-1:0,ext=has('max|maximum|highest|full')?'max':has('min|minimum|lowest')?'min':null;
+    if(hit&&(nm||dir||ext)){const k=hit[0];
+      const X={rate:{l:'Incoming radiation',u:' mSv/day',min:.1,max:60,step:.1,cur:R,put:setRateMan},day:{l:'Mission day',min:0,max:240,step:1,cur:day,put:setDay},str:{l:mode[0].toUpperCase()+mode.slice(1)+' mode strength',u:'%',min:0,max:100,step:1,cur:str,put:setStr}}[k]
+        ||{...FIELDS[k],step:FIELDS[k].step||1,cur:v[k],put:x=>set(k,x)};
+      let val=nm?(has('percent')||q.includes('%')?X.min+(X.max-X.min)*(+nm[0])/100:+nm[0]):ext?X[ext]:X.cur+dir*Math.max(X.step,Math.round((X.max-X.min)/10/X.step)*X.step);
+      val=+(Math.round(clamp(val,X.min,X.max)/X.step)*X.step).toFixed(2);X.put(val);
+      if(FIELDS[k]){const rg=RK.find(r=>REG[r].fields.includes(k));if(rg){setSel(rg);setTab('monitor')}}
+      say(`${X.l} set to ${val}${X.u||''}.`);return}
+    if(hit&&!nm&&!['blur','day','rate','temp','sleep','ex'].includes(hit[0])&&!/read|explain|about/.test(t)){say(`Say a value for ${hit[1][0]}, for example "${hit[1][0]} 4" or "${hit[1][0]} 50 percent".`);return}
+    /* assistant questions */
+    const m={mind:'mind',brain:'mind',eye:'eyes',heart:'heart',immune:'immune',gut:'gut',nutrition:'gut',stomach:'gut',bone:'bones',muscle:'bones',radiation:'radiation'};
+    const rk=(Object.keys(m).find(w=>t.includes(w))||'')&&m[Object.keys(m).find(w=>t.includes(w))];
+    const openR=k=>{setSel(k);setTab('monitor')};
+    if(/\b(stop talking|stop speaking|be quiet|quiet|silence|stop reading)\b/.test(t)){hush();return}
+    if(/what should i (look|check|do first)|recommend|what now|what next|suggest|where (do|should) i start/.test(t)){say(advise());return}
+    if(/\b(status|summary|how am i)\b/.test(t)){say(statusText());return}
+    if(/\b(help|what can i say|commands)\b/.test(t)){say('You can say a body system, such as heart. Set any slider, such as stress 4 or radiation 50 percent. Say the name of any button to press it. Ask what should I look at, explain the heart, read this aloud, or read the report. Say reset view to zoom out, and stop talking to silence me.');return}
+    if(/explain|tell me about|what is|what are|describe|learn about|teach/.test(t)&&rk){openR(rk);setPtab('guide');say(`${REG[rk].name}. ${GUIDE[rk].ov} ${GUIDE[rk].fn} ${GUIDE[rk].how}`);return}
+    if(/\b(read|aloud|out loud)\b/.test(t)){if(t.includes('report')){setTab('report');say(reportSpeech())}else if(/fact/.test(t)&&(rk||sel)){const k=rk||sel;openR(k);setPtab('guide');say('Key facts. '+GUIDE[k].facts.join(' '))}else if(rk){openR(rk);say(regionText(rk,true))}else say(readPanel());return}
+    if(/what (should|do|can) i do|next steps|actions/.test(t)){const k=rk||sel||RK.slice().sort((a,b)=>A[b].score-A[a].score)[0];openR(k);say(regionText(k,true));return}
+    if(/reset view|zoom out|full body|all systems|whole figure/.test(t)){setSel(null);setTab('monitor');say('Back to the full-body view.');return}
+    if(/\b(guide|anatomy)\b/.test(t)&&sel){setPtab('guide');say('Showing the anatomy guide for '+REG[sel].name+'.');return}
+    /* a spoken label that exactly names something on screen presses it */
+    if(!(rk&&t.split(/\s+/).length===1)&&pressByVoice(t,true))return;
+    if(rk){openR(rk);say(regionText(rk,false));return}
+    if(/check.?in/.test(t)){setCheckin(0);say('Starting your check-in. Say a value for each slider, then say next.');return}
+    if(t.includes('report')){setTab('report');say('Opening the surgeon report. Say read the report to hear it.');return}
+    if(t.includes('trend')){setTab('trends');say('Showing trends.');return}
+    if(t.includes('health log')||/\blog\b/.test(t)&&!/session|result/.test(t)){setTab('log');say('Opening the health log.');return}
+    if(t.includes('fitness')||t.includes('workout')){setTab('fitness');say(fitnessSpeech());return}
+    if(t.includes('monitor')||t.includes('home')){setTab('monitor');say('Showing the monitor.');return}
+    if(t.includes('shelter')){setLoc('cargo');say('Moved to the Water-Wall Cargo Bay, the best-shielded module.');return}
+    if(t.includes('acknowledge')||t.includes('okay')){doAck();say('Acknowledged.');return}
+    for(const k of Object.keys(TH))if(new RegExp('\\b'+k+'\\b').test(t)){setMode(k);say(k[0].toUpperCase()+k.slice(1)+' mode on.');return}
+    const ty=t.match(/^(?:type|write|enter|note|dictate)\s+(.+)/);
+    if(ty){const el=(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)&&document.activeElement.name!=='c'&&document.activeElement.type!=='range'?document.activeElement:null)||[...document.querySelectorAll('textarea,input[type=text],input[type=number]')].find(x=>x.offsetParent&&x.name!=='c');
+      if(el){const P=el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(P,'value').set.call(el,ty[1]);el.dispatchEvent(new Event('input',{bubbles:true}));el.focus();say('Entered: '+ty[1]+'.')}else say('There is no text field on this screen.');return}
+    if(/scroll (down|up)/.test(t)){window.scrollBy({top:t.includes('down')?500:-500,behavior:'smooth'});return}
+    if(pressByVoice(t,false))return;
+    say(`I did not find a command in "${t}". Say help to hear examples.`)};
+
+  /* press any visible button, tab, toggle, checklist item or drop-down option by saying its label */
+  const pressByVoice=(t,strict)=>{const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9% ]+/g,' ').replace(/\s+/g,' ').trim();
+    const SKIP=new Set(['click','press','select','open','toggle','tick','the','a','to','on','button','please','go','switch','choose','show','turn','tap','hit']);
+    const scope=document.querySelector('.hzwrap')||document.querySelector('.modal')||document;
+    const els=[...scope.querySelectorAll('button,[role=button],[role=tab],label.chk,label.btn,option')].filter(el=>el.tagName==='OPTION'?el.parentElement.offsetParent:(el.offsetParent&&!el.disabled));
+    const AKA={doctor:'dr',commander:'cmdr',lieutenant:'lt'};
+    const words=norm(t).split(' ').filter(w=>w&&!SKIP.has(w)).map(w=>AKA[w]||w);if(!words.length)return false;
+    let best=null,bs=0,bl='';
+    els.forEach(el=>{const lab=norm(el.getAttribute('aria-label')||el.innerText||el.textContent);if(!lab)return;const lw=lab.split(' ');
+      if(!words.every(w=>lw.some(x=>x===w||(w.length>3&&x.startsWith(w)))))return;const sc=Math.min(1,words.length/lw.length);
+      if(strict&&sc<1)return;if(sc>bs){bs=sc;best=el;bl=(el.getAttribute('aria-label')||el.innerText||el.textContent).replace(/\s+/g,' ').trim()}});
+    if(!best)return false;
+    if(best.tagName==='OPTION'){const s=best.parentElement;Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(s,best.value);s.dispatchEvent(new Event('change',{bubbles:true}))}else best.click();
+    say('Done: '+bl.slice(0,70)+'.');return true};
+
+  /* one microphone grant per session: open a single audio stream, keep it open, and keep one recogniser running */
+  useEffect(()=>{save('rs2_voice',voice);if(!voice){setMic('off');return}
+    const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SR){toast('Voice input is not supported in this browser. Use Edge or Chrome. You can still type commands here.');setVoice(false);return}
+    let on=true,timer=null;const r=new SR();r.continuous=true;r.interimResults=false;r.lang='en-US';
+    r.onstart=()=>setMic('on');
+    r.onresult=e=>{if(speaking.current)return;for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)cmd.current(e.results[i][0].transcript)};
+    r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){on=false;setVoice(false);toast('Microphone permission was refused. Allow the microphone for this page, then turn Voice commands on again.')}};
+    r.onend=()=>{if(on)timer=setTimeout(()=>{try{r.start()}catch(e){}},300)};   /* browsers end a session after silence: resume the same one */
+    (async()=>{try{if(!micStream.current&&navigator.mediaDevices)micStream.current=await navigator.mediaDevices.getUserMedia({audio:true})}
+      catch(e){on=false;setVoice(false);toast('Microphone permission was refused. Allow the microphone for this page, then turn Voice commands on again.');return}
+      if(on)try{r.start()}catch(e){}})();
+    return()=>{on=false;clearTimeout(timer);try{r.abort()}catch(e){};if(micStream.current){micStream.current.getTracks().forEach(x=>x.stop());micStream.current=null}}},[voice]);
+
+  /* scenarios */
+  const flare=()=>{setH(h=>({...h,radiation:true}));setFlares(f=>[...f,{day,mSv:25}]);setRateMan(45);setSpe({until:Date.now()+10*60*1000});setSel('radiation');setTab('monitor');set('nausea',2)};
+  const ff=()=>{setEnv('transit');setDay(180);setFlares([]);setSpe(null);setRateMan(null);setVits(s=>({...s,[crewId]:{...(s[crewId]||DEF),sleep:6,fatigue:3,antiox:1,rt:350,ex:60}}));setSel('mind');setTab('monitor');toast('Advanced to mission day 180.')};
+  const reset=()=>{setDay(14);setFlares([]);setSpe(null);setRateMan(null);setLoc('hab');setVits({});setPhotos({});setDone({});setSel(null);setAck({});setSess({});setH({radiation:true,isolation:true,distance:true,gravity:true,hostile:true})};
+
+  /* NASA DONKI */
+  const fetchWx=async()=>{setWx(w=>({...w,loading:true}));const q=d=>d.toISOString().slice(0,10),e=new Date(),s=new Date(Date.now()-30*864e5);
+    try{const ctl=new AbortController();setTimeout(()=>ctl.abort(),7000);
+      const [a,b]=await Promise.all(['FLR','SEP'].map(k=>fetch(`https://ccmc.gsfc.nasa.gov/DONKI-API/get/${k}?startDate=${q(s)}&endDate=${q(e)}`,{signal:ctl.signal}).then(r=>{if(!r.ok)throw 0;return r.json()})));
+      const ev=[...a.map(x=>({t:x.beginTime,l:'Solar flare, class '+(x.classType||'?')})),...b.map(x=>({t:x.eventTime,l:'Solar energetic particle event'}))].sort((x,y)=>(y.t||'').localeCompare(x.t||'')).slice(0,5);
+      setWx({mode:'live',events:ev,loading:false,msg:`${a.length} flares and ${b.length} particle events in the last 30 days.`})}
+    catch(err){setWx({mode:'sim',events:[{l:'M2.1 flare (simulated)'},{l:'Proton flux 4 pfu (simulated)'},{l:'Geomagnetic Kp 2, quiet (simulated)'}],loading:false,msg:'NASA DONKI could not be reached from this browser.'})}};
+  useEffect(()=>{fetchWx();const h=decodeURIComponent(location.hash);const cm=h.match(/cmd=([^#]+)/);if(cm)cm[1].split(';').forEach((x,i)=>setTimeout(()=>cmd.current(x),300+i*350)); /* demo presets: #flare #ff #fever #light #contrast #night #fitness #report #trends */
+    if(h.includes('flare'))flare();if(h.includes('ff'))ff();if(h.includes('fever')){setVits(s=>({...s,a1:{...DEF,temp:39.2,sleep:5}}));setSel('immune')}
+    ['light','contrast','night'].forEach(m=>{if(h.includes(m))setMode(m)});['fitness','report','trends','log'].forEach(m=>{if(h.includes(m))setTab(m)});if(h.includes('noack'))setAck({immune:'fever',radiation:'rate',gut:'storm'})},[]);
+
+  /* series */
+  const series=useMemo(()=>{const out=[],step=Math.max(1,Math.round(day/60));let cc=c.prior;
+    for(let d=0;d<=day;d++){const fl=flares.filter(f=>f.day===d).reduce((a,f)=>a+f.mSv,0);cc+=E.rate+fl;
+      if(d%step===0||d===day){let dm=E.rate*6;flares.forEach(f=>{if(d>=f.day)dm+=f.mSv*1.2*Math.exp(-(d-f.day)/2.5)});
+        out.push({d,cum:cc,dmg:Math.min(dm,40),rep:(5+repair/100*9)*(1-.12*d/180)+Math.sin(d/3)*.4})}}
+    if(out.length<2)out.push({...out[0],d:1});return out},[day,flares,E,repair,c]);
+  const trend=k=>{const I=REG[k].ind,cur=I.cur(v),n=Math.max(2,Math.min(day,40)),out=[];
+    for(let i=0;i<=n;i++){const t=i/n,d=Math.round(t*Math.max(day,1));out.push({d,v:I.base+(cur-I.base)*t*t*t+(i<n?(rnd(i+k.length*7)-.5)*(I.band[1]-I.band[0])*.25:0)})}return out};
+
+  const delay=E.delay>=60?E.delay+jit:E.delay,dTxt=delay>=60?`${Math.floor(delay/60)}m ${String(Math.round(delay%60)).padStart(2,'0')}s`:fx(delay,1)+' s';
+  const left=spe?Math.max(0,Math.ceil((spe.until-now)/1000)):0;
+  const hl=hov?HAZ[hov].hits:[];
+  const report=useMemo(()=>({simulated:true,notice:'Awareness tool. Not a diagnosis.',crew:{name:c.name,role:c.role},missionDay:day,environment:E.name,hazardsActive:Object.keys(H).filter(k=>H[k]).map(k=>HAZ[k].name),
+    radiation:{careerDoseMSv:+fx(cum,1),limitMSv:LIMIT,percentOfLimit:+fx(cum/LIMIT*100,1),currentRateMSvPerDay:+fx(eff,2),location:mod.name},
+    systems:RK.map(k=>({system:REG[k].name,status:LV[A[k].lv],strain:Math.round(A[k].score),drivers:A[k].drivers.map(d=>DR[d.id].l)})),
+    latestInputs:v,checkIns:checkins.filter(x=>x.crewId===crewId).length,countermeasuresCompleted:doneN,repairScore:Math.round(repair)}),[A,c,day,E,H,cum,eff,mod,v,checkins,crewId,doneN,repair]);
+
+  /* ---- assistant: what to look at, and spoken summaries ---- */
+  const ranked=RK.filter(k=>A[k].lv>0).sort((x,y)=>A[y].score-A[x].score);
+  const advise=()=>{const P=[];
+    if(!ranked.length)P.push('All seven systems are OK.');
+    else{const k=ranked[0];P.push(`Look at ${REG[k].name} first. It is at ${LV[A[k].lv]}, mainly from ${DR[A[k].drivers[0].id].l.toLowerCase()}.`);
+      if(ranked[1])P.push('Then '+ranked.slice(1,3).map(x=>`${REG[x].name}, ${LV[A[x].lv]}`).join(', and ')+'.')}
+    if(rising)P.push(`Radiation is ${eff>=5?'at storm level':'rising'}. Open exposure guidance${loc!=='cargo'?' and move to the shelter':''}.`);
+    if(!checkins.some(x=>x.crewId===crewId&&x.day===day))P.push('Today’s check-in is not done yet.');
+    if(v.ex<60)P.push('Today’s workout is not logged. See Fitness.');
+    return P.join(' ')};
+  const statusText=()=>`${c.name}, mission day ${day}. `+(ranked.length?ranked.map(k=>`${REG[k].name} is at ${LV[A[k].lv]}`).join('. ')+'. Everything else is OK.':'All seven systems are OK.')+` Career dose ${fx(cum,0)} of 600 millisieverts.`;
+  const regionText=(k,full)=>{const x=A[k],d=x.drivers.slice(0,3).map(q=>DR[q.id].l.toLowerCase());
+    let s=`${REG[k].name} is ${x.lv?'at '+LV[x.lv]:'OK'}.`;if(x.lv&&d.length)s+=` Driven by ${d.join(', ')}.`;
+    if(full||x.lv>=2){const ac=x.lv?topActs(x,3):REG[k].keep;s+=(x.lv?' Suggested actions: ':' To keep it this way: ')+ac.map((q,i)=>`${i+1}, ${q}`).join('. ')+'.'}
+    return s};
+  const fitnessSpeech=()=>{const p=buildRoutine(A,tags,eff>5||!!spe);return `Today’s session is ${p.blocks.reduce((s,b)=>s+b.min,0)} minutes: ${p.blocks.map(b=>b.t).join(', ')}.`+(p.blocks.find(b=>b.why)?' '+p.blocks.find(b=>b.why).why:'')};
+  const reportSpeech=()=>`Flight surgeon report for ${c.name}, mission day ${day}, ${E.name}. Career dose ${fx(cum,0)} of 600 millisieverts. `+RK.map(k=>`${REG[k].name}, ${LV[A[k].lv]}`).join('. ')+'.';
+  const readPanel=()=>tab==='fitness'?fitnessSpeech():tab==='report'?reportSpeech():tab==='trends'?statusText():tab==='log'?`Health log for ${c.name}. ${c.log.length} records. Most recent: ${[...c.log].sort((x,y)=>y.date.localeCompare(x.date))[0]?.note||'none'}`
+    :sel?(ptab==='guide'?`${REG[sel].name}. ${GUIDE[sel].ov} ${GUIDE[sel].fn} ${GUIDE[sel].how}`:regionText(sel,true)):advise();
+  /* an alert reads itself aloud, so it works hands-free */
+  const uKey=urgent?urgent.k+urgent.d.id:'';
+  useEffect(()=>{if(urgent)say(`Alert. ${REG[urgent.k].name}. ${DR[urgent.d.id].issue}. `+urgent.acts.map((q,i)=>`${i+1}. ${q}`).join('. ')+'. Say acknowledge when you have read this.')},[uKey]);
+
+  const Sw=(on,fn,label)=><button className="sw" aria-pressed={on} onClick={fn}><i/>{label}</button>;
+  const a=sel&&A[sel],r=sel&&REG[sel];
+  const acts=sel?(a.drivers.length&&a.lv>=1?topActs(a,4):r.keep):[];
+
+  return <div className="wrap">
+   <header className="hdr">
+    <div className="brand"><h1>RADSHIELD<span>-MD</span></h1><span className="sub">Crew health awareness console</span></div>
+    <div className="read">
+     <div><span className="lbl">Crew member</span><select aria-label="Crew member" style={{minHeight:34,padding:'4px 8px',width:'auto'}} value={crewId} onChange={e=>setCrewId(e.target.value)}>{crew.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select></div>
+     <div><span className="lbl">Mission day</span><b className="mono">{day}</b></div>
+     <div><span className="lbl">Environment</span><b>{E.name} <span className="sub mono">{E.g}</span></b></div>
+     <div><span className="lbl">Earth round-trip delay</span><b className="mono">{dTxt} <span className="sub">{delay>=60?'autonomous care':'live link'}</span></b></div>
+     <div><span className="lbl">Career dose</span><b className="mono">{fx(cum,0)} / {LIMIT} mSv</b></div>
+     <div><span className="lbl">Dose rate here</span><b className={'mono '+(eff>=5?'c3':rising?'c2':'')}>{fx(eff,2)} mSv/day</b></div>
+    </div>
+    <button className="btn pri" style={{alignSelf:'center'}} onClick={()=>setCheckin(0)}>Start check-in</button>
+   </header>
+   <div className="bar2">
+    <span className="lbl">Display</span>
+    <div className="seg" role="group" aria-label="Display mode">{Object.keys(TH).map(k=><button key={k} aria-pressed={mode===k} onClick={()=>setMode(k)}>{k[0].toUpperCase()+k.slice(1)}</button>)}</div>
+    <label className="row sub" style={{gap:8}}>Strength<input type="range" min="0" max="100" value={str} onChange={e=>setStr(+e.target.value)} style={{width:130}} aria-label={`${mode} mode strength`}/><span className="mono" style={{width:36}}>{str}%</span></label>
+    <span style={{flex:1}}/>
+    {Sw(large,()=>setLarge(x=>!x),'Large text')}{Sw(scan,()=>setScan(x=>!x),'1-switch scan (Space)')}{Sw(voice,()=>setVoice(x=>!x),'Voice commands')}
+    {Sw(speakOn,()=>{if(speakOn){hush();setSpeakOn(false)}else{setSpeakOn(true);speakRef.current=true;say('Hello, my name is '+PERSONAS[persona].n+'. You can choose my voice from the list.')}},'Speak replies')}
+    {speakOn&&<label className="row sub" style={{gap:6}}>Voice<select aria-label="Assistant voice" style={{width:'auto',minHeight:36,padding:'4px 8px'}} value={persona} onChange={e=>pickVoice(+e.target.value)}>{PERSONAS.map((p,i)=><option key={p.n} value={i}>{p.n}</option>)}</select></label>}
+   </div>
+   <nav className="tabs" role="tablist">{[['monitor','Monitor'],['trends','Trends'],['log','Health Log'],['fitness','Fitness'],['report','Surgeon Report']].map(([k,l])=><button key={k} role="tab" aria-selected={tab===k} onClick={()=>setTab(k)}>{l}</button>)}</nav>
+   <section className="asst" aria-label="Assistant">
+    <div className="who"><span className={'dot '+(voice&&mic==='on'?'on':'')}/><b>Assistant</b><span className="sub">{voice?(mic==='on'?'listening':'starting microphone'):'microphone off'}{heard?` · heard "${heard}"`:''}</span></div>
+    <div className="row" style={{gap:6}}>
+     <button className="btn sm" onClick={()=>say(advise())}>What should I look at?</button>
+     <button className="btn sm" onClick={()=>say(readPanel())}>Read this aloud</button>
+     <button className="btn sm" onClick={hush}>Stop speaking</button>
+     <form onSubmit={e=>{e.preventDefault();const i=e.target.elements.c;if(i.value.trim()){cmd.current(i.value);i.value=''}}}>
+      <input name="c" type="text" aria-label="Type a command for the assistant" placeholder='Say or type: "stress 4", "explain the heart"' style={{width:270,minHeight:36,padding:'4px 10px'}}/></form>
+    </div>
+   </section>
+
+   {tab==='monitor'&&<div className="grid">
+    {/* ---------- left: context ---------- */}
+    <div>
+     <div className="card"><span className="lbl">Environment</span>
+      <div style={{display:'grid',gap:6,marginTop:8}}>{Object.entries(ENVS).map(([k,e])=><button key={k} className="btn full" aria-label={e.name} aria-pressed={env===k} onClick={()=>{setEnv(k);setRateMan(null)}}>{e.name}<span className="sub" style={{float:'right',fontWeight:400}}>{e.g}</span></button>)}</div></div>
+     <div className="card"><span className="lbl">NASA's five hazards</span>
+      <div style={{marginTop:6}}>{Object.entries(HAZ).map(([k,h])=><button key={k} className="haz" aria-label={h.name} aria-pressed={H[k]} onClick={()=>setH(s=>({...s,[k]:!s[k]}))} onMouseEnter={()=>setHov(k)} onMouseLeave={()=>setHov(null)} onFocus={()=>setHov(k)} onBlur={()=>setHov(null)}>
+        <span className="box">{H[k]&&<svg width="12" height="12" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" stroke="currentColor" strokeWidth="3.5" fill="none"/></svg>}</span>
+        <span><span className="hn">{h.name}</span><br/><span className="sub">affects {h.hits.map(x=>REG[x].name.split(' ')[0].toLowerCase()).join(', ')}</span></span></button>)}</div></div>
+     <div className="card"><span className="lbl">Test controls · simulated</span>
+      <div className="field"><label htmlFor="rs"><span>Incoming radiation</span><b className="mono">{fx(R,1)} mSv/day</b></label>
+       <input id="rs" type="range" min="0.1" max="60" step="0.1" value={R} onChange={e=>setRateMan(+e.target.value)}/>
+       <div className="ends"><span>background</span><span>solar storm</span></div></div>
+      {rateMan!==null&&!spe&&<button className="btn sm" onClick={()=>setRateMan(null)}>Back to environment level ({E.rate})</button>}
+      <div className="field"><label htmlFor="ds"><span>Mission day</span><b className="mono">{day}</b></label><input id="ds" type="range" min="0" max="240" value={day} onChange={e=>setDay(+e.target.value)}/></div>
+      <hr/>
+      <div style={{display:'grid',gap:6}}>
+       <button className="btn full" onClick={flare}>Simulate X-class solar flare</button>
+       <button className="btn full" onClick={ff}>Fast-forward 6 months to Mars</button>
+       <button className="btn full" onClick={reset}>Reset to nominal baseline</button></div></div>
+    </div>
+
+    {/* ---------- centre: anatomy ---------- */}
+    <div>
+     {rising&&<div className={'note '+(eff>=5?'al':'')} style={{marginBottom:12}} role="status">
+       <div className="row sp"><b>{eff>=5?'Radiation storm level':'Radiation is rising'}: {fx(eff,1)} mSv/day where you are{spe?` · ${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')} remaining`:''}</b>
+        <span className="row">{loc!=='cargo'&&<button className="btn sm" onClick={()=>setLoc('cargo')}>Move to shelter</button>}<button className="btn sm" onClick={()=>setSel('radiation')}>Exposure guidance</button></span></div>
+       <div className="sub">{loc==='cargo'?'You are in the best-shielded module. Stay until the rate falls.':`${mod.name} has ${mod.sh}% shielding. The Water-Wall Cargo Bay has 88%.`}</div></div>}
+     <Figure A={A} sel={sel} pick={k=>setSel(k)} scanKey={scan?RK[scanIdx]:null} hl={hl} repair={repair}/>
+     <div className="row" style={{justifyContent:'center',gap:22,marginTop:6}}>{[0,1,2,3].map(i=><Badge key={i} lv={i}/>)}<span className="sub mono">cell repair {Math.round(repair)}/100</span></div>
+     <p className="sub" style={{textAlign:'center',margin:'8px 0 0'}}>Awareness tool, not a diagnosis. All readings are simulated.</p>
+    </div>
+
+    {/* ---------- right: detail ---------- */}
+    <div className="right">
+     {!sel?<div className="card"><h2>Body systems</h2>
+       <table><tbody>{RK.map(k=><tr key={k} style={{cursor:'pointer'}} onClick={()=>setSel(k)}><td><button style={{background:'none',border:0,padding:0,textAlign:'left'}} onClick={()=>setSel(k)}>{REG[k].name}</button><div className="sub">{A[k].drivers[0]?DR[A[k].drivers[0].id].l:'No drivers'}</div></td><td style={{textAlign:'right',whiteSpace:'nowrap'}}><Badge lv={A[k].lv}/></td></tr>)}</tbody></table>
+       <p className="sub" style={{marginBottom:0}}>Select a system on the figure to see what is driving it and what to do.</p></div>
+     :<div className="card">
+       <div className="row sp"><h2 style={{fontSize:'1.15rem',margin:0}}>{r.name}</h2><Badge lv={a.lv}/></div>
+       <div className="meter" style={{margin:'10px 0'}}><i style={{width:a.score+'%',background:LVC[a.lv]}}/></div>
+       <div className="anat inset" data-sel={sel} style={Object.fromEntries(RK.map(k=>['--c-'+k,LVC[A[k].lv]]))} role="img" aria-label={'Close-up illustration: '+r.name}>
+        <svg viewBox={CROP[sel]} preserveAspectRatio="xMidYMid meet"><g dangerouslySetInnerHTML={ANAT}/></svg></div>
+       <div className="seg" role="group" aria-label="Panel view" style={{width:'100%'}}>
+        <button style={{flex:1}} aria-pressed={ptab==='status'} onClick={()=>setPtab('status')}>Status and actions</button>
+        <button style={{flex:1}} aria-pressed={ptab==='guide'} onClick={()=>setPtab('guide')}>Anatomy guide</button></div>
+       {ptab==='guide'?<div style={{marginTop:14}}><Guide k={sel}/></div>:<div>
+       <p style={{margin:'12px 0 4px',fontSize:'.9rem'}}>{r.why}</p>
+       <hr/><span className="lbl">What is driving this</span>
+       {a.drivers.length?a.drivers.slice(0,5).map(d=><div className="drv" key={d.id}><span>{DR[d.id].l}</span><div className="meter"><i style={{width:clamp(d.pts*2,4,100)+'%',background:LVC[a.lv]}}/></div></div>):<p className="sub" style={{margin:'6px 0'}}>Nothing notable. Within baseline.</p>}
+
+       {sel==='radiation'&&<div><hr/>
+         <div className="row sp"><span className="lbl">Career budget</span><b className="mono">{fx(cum,1)} / {LIMIT} mSv · {fx(cum/LIMIT*100,0)}%</b></div>
+         <div className="meter" style={{margin:'8px 0'}}><i style={{width:clamp(cum/LIMIT*100,0,100)+'%',background:'var(--acc)'}}/></div>
+         {rising&&<div className={'note '+(eff>=5?'al':'')} style={{margin:'12px 0'}}><b>How to lower your exposure now</b>
+           <ol style={{margin:'6px 0 0',paddingLeft:18}}>
+            <li><b>Shielding:</b> {loc==='cargo'?'stay in the Water-Wall Cargo Bay.':'move to the Water-Wall Cargo Bay (88% shielding).'} Stack water and food bags between you and the hull.</li>
+            <li><b>Time:</b> {env==='rover'?'end the traverse and return to the habitat.':'postpone any EVA and cut time in the Cockpit (15% shielding).'}</li>
+            <li><b>Monitor:</b> keep your dosimeter on and recheck the dose rate every 15 minutes. Leave shelter only when it is back near {E.rate} mSv/day.</li>
+           </ol></div>}
+         <span className="lbl">Storm-shelter pathfinder · select a module to move</span>
+         <ShelterMap loc={loc} setLoc={setLoc} storm={eff>=5}/>
+         <hr/><PhotoCheck kind="skin" val={photo.skin} set={x=>setPhotos(s=>({...s,[crewId]:{...photo,skin:x}}))}/>
+         <hr/><div className="row sp"><span className="lbl">Space weather</span><span className="chip mono" style={{borderColor:wx.mode==='live'?'var(--ok)':'var(--drift)'}}>{wx.mode==='live'?'LIVE NASA DONKI':'SIMULATED TELEMETRY (DONKI STANDBY)'}</span></div>
+         <p className="sub" style={{margin:'6px 0'}}>{wx.msg}</p>
+         <ul className="mono" style={{margin:'0 0 8px',paddingLeft:18,fontSize:'.8rem'}}>{wx.events.map((e,i)=><li key={i}>{e.t?e.t.slice(0,10)+' · ':''}{e.l}</li>)}</ul>
+         <button className="btn sm" onClick={fetchWx} disabled={wx.loading}>{wx.loading?'Fetching…':'Fetch Live NASA DONKI'}</button></div>}
+
+       {r.fields.length>0&&<div><hr/><span className="lbl">Self-check · move a slider to test</span>{r.fields.map(k=><Field key={k} k={k} v={v} set={set}/>)}</div>}
+       {sel==='mind'&&<div><hr/><ReactionTest onDone={ms=>{set('rt',ms);toast('Reaction time '+ms+' ms recorded.')}}/></div>}
+       {sel==='eyes'&&<div><hr/><PhotoCheck kind="eyes" val={photo.eyes} set={x=>setPhotos(s=>({...s,[crewId]:{...photo,eyes:x}}))}/></div>}
+       <hr/><span className="lbl">{a.lv>=1?'Suggested actions':'Keep it this way'} · tick when done</span>
+       {acts.map(t=>{const key=crewId+sel+t;return <label key={key} className={'chk '+(done[key]?'done':'')}><input type="checkbox" checked={!!done[key]} onChange={e=>setDone(d=>({...d,[key]:e.target.checked}))}/>{t}</label>})}
+       {r.ind&&<div><hr/><span className="lbl">{r.ind.l} trend ({r.ind.u.trim()})</span><Chart h={130} data={trend(sel)} yMin={r.ind.min||0} yMax={r.ind.max} band={r.ind.band} lines={[{k:'v',c:'var(--acc)',n:r.ind.l}]} title={r.ind.l+' trend'}/></div>}
+       </div>}
+       <div style={{marginTop:12}}><button className="btn sm" onClick={()=>setSel(null)}>Back to all systems</button></div>
+     </div>}
+    </div>
+   </div>}
+
+   {tab==='trends'&&<div className="cols">
+     <div className="card"><h3>Career radiation dose vs 600 mSv limit</h3><Chart data={series} yMax={650} limit={{v:LIMIT,l:'NASA career limit 600 mSv'}} lines={[{k:'cum',c:'var(--acc)',n:'Cumulative dose (mSv)'}]} title="Cumulative dose"/></div>
+     <div className="card"><h3>Radiation damage vs active DNA repair</h3><Chart data={series} yMax={40} lines={[{k:'dmg',c:'var(--alert)',n:'Damage index'},{k:'rep',c:'var(--ok)',dash:'6 4',n:'Repair capacity (sleep, nutrition)'}]} title="Damage versus repair"/></div>
+     {RK.filter(k=>REG[k].ind).map(k=>{const I=REG[k].ind;return <div className="card" key={k}><div className="row sp"><h3 style={{margin:0}}>{REG[k].name}: {I.l.toLowerCase()}</h3><Badge lv={A[k].lv}/></div><Chart h={140} data={trend(k)} yMin={I.min||0} yMax={I.max} band={I.band} lines={[{k:'v',c:'var(--acc)',n:`${I.l} (${I.u.trim()})`}]} title={I.l}/></div>})}
+   </div>}
+   {tab==='log'&&<HealthLog c={c} setCrew={setCrew} checkins={checkins.filter(x=>x.crewId===crewId)}/>}
+   {tab==='fitness'&&<Fitness c={c} A={A} tags={tags} sheltering={eff>5||(!!spe)} gp={gp} setGp={setGp} sess={sess} setSess={setSess} toast={toast} setEx={m=>set('ex',m)} day={day}/>}
+   {tab==='report'&&<Report report={report} c={c}/>}
+
+   {checkin!==null&&<CheckIn step={checkin} setStep={setCheckin} v={v} set={set} A={A} onSave={()=>{const e={crewId,day,at:new Date().toISOString(),v:{...v},status:Object.fromEntries(RK.map(k=>[k,LV[A[k].lv]]))};setCheckins(x=>[...x,e]);setCheckin(null);toast('Check-in saved for '+c.name+'.')}}/>}
+
+   {urgent&&<div className="hzwrap" role="alertdialog" aria-modal="true" aria-labelledby="hzt"><div className="hz"><div className="stripe"/><div className="in">
+     <div className="tag"><Shape lv={3} size={18}/>ALERT · {REG[urgent.k].name.toUpperCase()}</div>
+     <h2 id="hzt">{DR[urgent.d.id].issue}</h2>
+     <p className="why">Triggered by: {A[urgent.k].drivers.slice(0,3).map(d=>DR[d.id].l.toLowerCase()).join(', ')}.{urgent.others.length?' Also in alert: '+urgent.others.map(k=>REG[k].name).join(', ')+'.':''}</p>
+     <ol>{urgent.acts.map((t,i)=><li key={i}><span>{i+1}</span><div>{t}</div></li>)}</ol>
+     <div className="row sp"><span style={{color:'#bbb',fontSize:'.8rem'}}>Awareness guidance, not a diagnosis. Earth reply in {dTxt}.</span><button className="ack" onClick={doAck}>Acknowledge</button></div>
+   </div><div className="stripe"/></div></div>}
+   <Warp k={tab==='monitor'?warpN:0}/>
+   <div className="toasts" aria-live="polite">{toasts.map(t=><div key={t.id} className="toast">{t.m}</div>)}</div>
+  </div>}
+
+/* ================= check-in flow ================= */
+const STEPS=[['How is your mind?',['mood','stress','fatigue','sleep']],['How is your body?',['hr','temp','nausea','blur']],['Fuel and movement',['water','cal','antiox','ex']]];
+function CheckIn({step,setStep,v,set,A,onSave}){const last=step===STEPS.length;
+  return <div className="modal" role="dialog" aria-modal="true" aria-label="Daily check-in"><div className="card">
+   <div className="row sp"><span className="lbl">Daily check-in · step {step+1} of {STEPS.length+1}</span><button className="btn sm" onClick={()=>setStep(null)}>Close</button></div>
+   <div className="steps">{[0,1,2,3].map(i=><i key={i} className={i<=step?'on':''}/>)}</div>
+   {!last?<div><h2 style={{fontSize:'1.2rem',margin:'10px 0'}}>{STEPS[step][0]}</h2>{STEPS[step][1].map(k=><Field key={k} k={k} v={v} set={set} pre="ci"/>)}</div>
+   :<div><h2 style={{fontSize:'1.2rem',margin:'10px 0'}}>Your status today</h2>
+     <table><tbody>{RK.map(k=><tr key={k}><td>{REG[k].name}</td><td className="sub">{A[k].drivers[0]&&A[k].lv>0?DR[A[k].drivers[0].id].l:''}</td><td style={{textAlign:'right'}}><Badge lv={A[k].lv}/></td></tr>)}</tbody></table></div>}
+   <div className="row sp" style={{marginTop:14}}><button className="btn" disabled={step===0} onClick={()=>setStep(step-1)}>Back</button>{last?<button className="btn pri" onClick={onSave}>Save check-in</button>:<button className="btn pri" onClick={()=>setStep(step+1)}>Next</button>}</div>
+  </div></div>}
+
+/* ================= health log ================= */
+function HealthLog({c,setCrew,checkins}){
+  const [f,setF]=useState({date:new Date().toISOString().slice(0,10),tag:'other',note:''});
+  const up=fn=>setCrew(cs=>cs.map(x=>x.id===c.id?{...x,log:fn(x.log)}:x));
+  const rows=[...c.log].sort((a,b)=>b.date.localeCompare(a.date));
+  return <div className="grid" style={{gridTemplateColumns:'minmax(0,1fr) 380px'}}>
+   <div className="card"><h2 style={{fontSize:'1.15rem'}}>{c.name}</h2><div className="sub">{c.role} · age {c.age} · lifetime medical record · career dose before this mission {c.prior} mSv</div>
+    <table style={{marginTop:12}}><thead><tr><th>Date</th><th>Type</th><th>Record</th><th></th></tr></thead><tbody>
+     {rows.map(e=><tr key={e.id}><td className="mono" style={{whiteSpace:'nowrap'}}>{e.date}</td><td><span className="chip">{TAGS[e.tag]}</span></td><td>{e.note}</td><td><button className="btn sm" onClick={()=>up(l=>l.filter(x=>x.id!==e.id))}>Remove</button></td></tr>)}
+    </tbody></table>
+    {checkins.length>0&&<div><hr/><span className="lbl">Mission check-ins</span><table><tbody>{checkins.map((x,i)=><tr key={i}><td className="mono">Day {x.day}</td><td>{Object.entries(x.status).filter(([k,s])=>s!=='OK').map(([k,s])=>REG[k].name+' '+s).join(', ')||'All systems OK'}</td></tr>)}</tbody></table></div>}</div>
+   <div className="card right"><h3>Add a record</h3>
+    <div className="field"><label htmlFor="ld">Date</label><input id="ld" type="date" value={f.date} onChange={e=>setF({...f,date:e.target.value})}/></div>
+    <div className="field"><label htmlFor="lt">Type</label><select id="lt" value={f.tag} onChange={e=>setF({...f,tag:e.target.value})}>{Object.entries(TAGS).map(([k,t])=><option key={k} value={k}>{t}</option>)}</select></div>
+    <div className="field"><label htmlFor="ln">What happened</label><textarea id="ln" rows="4" value={f.note} onChange={e=>setF({...f,note:e.target.value})}/></div>
+    <button className="btn pri" onClick={()=>{if(f.note.trim()){up(l=>[...l,{...f,id:Date.now()}]);setF({...f,note:''})}}}>Add to log</button>
+    <p className="sub">Records here feed the body-system status and each astronaut's workout plan and goals.</p></div></div>}
+
+/* ================= fitness ================= */
+function Fitness({c,A,tags,sheltering,gp,setGp,sess,setSess,toast,setEx,day}){
+  const plan=useMemo(()=>buildRoutine(A,tags,sheltering),[A,tags,sheltering]);
+  const total=plan.blocks.reduce((a,b)=>a+b.min,0),issues=RK.filter(k=>A[k].lv>=1);
+  const goals=tags.filter(t=>GOALDEFS[t]).map(t=>GOALDEFS[t]);if(!goals.length)goals.push(GOALDEFS.cardio);
+  const [inp,setInp]=useState({});
+  const key=g=>c.id+'_'+g.id,cur=g=>gp[key(g)]?.v??g.start;
+  const logGoal=g=>{const x=parseFloat(inp[g.id]);if(isNaN(x))return;const was=cur(g)>=g.target;setGp(p=>({...p,[key(g)]:{v:x}}));setInp(i=>({...i,[g.id]:''}));if(!was&&x>=g.target)toast(`Goal reached: ${g.label}, ${g.target} ${g.unit}. Well done, ${c.name}.`)};
+  return <div className="grid" style={{gridTemplateColumns:'minmax(0,1.3fr) minmax(0,1fr)'}}>
+   <div className="card">
+    <div className="row sp"><div><h2 style={{fontSize:'1.15rem',margin:0}}>Today's session for {c.name}</h2><span className="sub">{total} minutes · rebuilt whenever health status changes</span></div>{plan.rest&&<Badge lv={2}/>}</div>
+    <p className="sub" style={{margin:'8px 0 0'}}>{issues.length?'Adjusted for: '+issues.map(k=>`${REG[k].name} (${LV[A[k].lv]})`).join(', ')+'.':'No current issues. Standard maintenance session.'}</p>
+    {plan.blocks.map((b,bi)=><div key={b.t}><hr/><div className="row sp"><b>{b.t}</b><span className="chip mono">{b.min} min</span></div>
+      {b.why&&<p className="note" style={{margin:'8px 0'}}>{b.why}</p>}
+      <table><tbody>{b.items.map(([n,d],i)=>{const k=c.id+b.t+n;return <tr key={n}><td style={{width:28}}><input type="checkbox" aria-label={'Done: '+n} style={{width:18,height:18,accentColor:'var(--acc)'}} checked={!!sess[k]} onChange={e=>setSess(s=>({...s,[k]:e.target.checked}))}/></td><td>{n}</td><td className="mono" style={{textAlign:'right'}}>{d}</td></tr>})}</tbody></table></div>)}
+    <hr/><button className="btn pri" onClick={()=>{setEx(Math.min(180,Math.round(total/10)*10));toast(`Session logged: ${total} minutes of exercise today.`)}}>Log session complete</button>
+    <p className="sub" style={{marginBottom:0}}>Device names follow station practice (resistive exercise device, treadmill, cycle ergometer). Stop if you feel pain or dizziness.</p>
+   </div>
+   <div className="right"><div className="card"><h3>Goals from the health log</h3><p className="sub" style={{margin:0}}>You are notified when a goal is reached. If you fall behind, the weekly steps are recalculated from where you are.</p></div>
+    {goals.map(g=>{const x=cur(g),ok=x>=g.target,pct=clamp((x-g.start)/(g.target-g.start)*100,0,100),exp=g.start+(g.target-g.start)*Math.min(1,day/42),behind=!ok&&day>=28&&x<exp-(g.target-g.start)*.1;
+     return <div className="card" key={g.id}><div className="row sp"><b>{g.label}</b>{ok?<span className="badge c0"><Shape lv={0} size={16}/>REACHED</span>:behind?<span className="badge c2"><Shape lv={2} size={16}/>BEHIND</span>:<span className="badge c0">ON TRACK</span>}</div>
+      <div className="sub">{g.why}</div>
+      <div className="row sp" style={{marginTop:8}}><b className="mono" style={{fontSize:'1.2rem'}}>{x} {g.unit}</b><span className="sub mono">goal {g.target}</span></div>
+      <div className="meter" style={{margin:'6px 0 10px'}}><i style={{width:pct+'%',background:'var(--acc)'}}/></div>
+      {!ok&&<div className="row" style={{gap:6,marginBottom:10}}><span className="sub">{behind?'Catch-up steps:':'Weekly steps:'}</span>{[1,2,3,4,5,6].map(w=><span key={w} className="chip mono">{Math.round((x+(g.target-x)*w/6)*10)/10}</span>)}</div>}
+      <div className="row" style={{flexWrap:'nowrap'}}><input type="number" step="any" placeholder={`New result (${g.unit})`} aria-label={'Log '+g.label} value={inp[g.id]||''} onChange={e=>setInp(i=>({...i,[g.id]:e.target.value}))}/><button className="btn" onClick={()=>logGoal(g)}>Log</button></div></div>})}
+   </div></div>}
+
+/* ================= surgeon report ================= */
+function Report({report,c}){const [json,setJson]=useState(false);
+  const text=useMemo(()=>{const r=report,L=[];L.push('FLIGHT SURGEON REPORT (SIMULATED DATA)','Awareness summary. Not a diagnosis.','',`Crew member : ${r.crew.name}, ${r.crew.role}`,`Mission day : ${r.missionDay}`,`Environment : ${r.environment}`,`Hazards on  : ${r.hazardsActive.join('; ')||'none'}`,'',
+    'RADIATION',`  Career dose : ${r.radiation.careerDoseMSv} of ${r.radiation.limitMSv} mSv (${r.radiation.percentOfLimit}%)`,`  Rate now    : ${r.radiation.currentRateMSvPerDay} mSv/day in ${r.radiation.location}`,'','BODY SYSTEMS');
+    r.systems.forEach(s=>L.push(`  ${s.system.padEnd(22)}${s.status.padEnd(7)}${s.drivers.slice(0,3).join('; ')}`));
+    L.push('','LATEST SELF-CHECK',`  Sleep ${r.latestInputs.sleep} h, stress ${r.latestInputs.stress}/5, mood ${r.latestInputs.mood}/5, fatigue ${r.latestInputs.fatigue}/5`,`  Pulse ${r.latestInputs.hr} bpm, temp ${r.latestInputs.temp} C, nausea ${r.latestInputs.nausea}/5, vision blur ${r.latestInputs.blur}/5`,`  Water ${r.latestInputs.water} L, food ${r.latestInputs.cal}% of plan, exercise ${r.latestInputs.ex} min`+(r.latestInputs.rt?`, reaction ${r.latestInputs.rt} ms`:''),'',`Check-ins saved: ${r.checkIns}. Countermeasures completed: ${r.countermeasuresCompleted}. Cell repair score: ${r.repairScore}/100.`);return L.join('\n')},[report]);
+  const out=json?JSON.stringify(report,null,2):text;
+  const dl=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:json?'application/json':'text/plain'}));a.download=`surgeon-report-day${report.missionDay}.${json?'json':'txt'}`;a.click()};
+  return <div className="card"><div className="row sp" style={{marginBottom:12}}><h2 style={{fontSize:'1.15rem',margin:0}}>Flight surgeon report: {c.name}</h2>
+    <div className="row"><div className="seg"><button aria-pressed={!json} onClick={()=>setJson(false)}>Plain text</button><button aria-pressed={json} onClick={()=>setJson(true)}>JSON</button></div>
+    <button className="btn" onClick={()=>navigator.clipboard&&navigator.clipboard.writeText(out)}>Copy</button><button className="btn pri" onClick={dl}>Download</button></div></div>
+   <pre className="mono">{out}</pre></div>}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
