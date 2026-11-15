@@ -122,7 +122,7 @@ input[type=number],input[type=text],input[type=date],select,textarea{width:100%;
 .inset svg{width:100%;height:100%;display:block}
 .guide p{margin:4px 0 14px;font-size:.92rem}.guide ul{margin:6px 0 14px;padding-left:18px;font-size:.92rem}.guide li{margin:4px 0}
 .warp{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:30}
-.camview{width:100%;max-height:56vh;background:#000;border-radius:6px;display:block;object-fit:contain}
+.camview{width:100%;max-height:46vh;background:#000;border-radius:6px;display:block;object-fit:contain}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--mut)}
 .dot.on{background:var(--ok);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 25%,transparent)}
 .call{transition:opacity .3s;position:absolute;width:22.5%;transform:translateY(-50%);min-height:48px;display:flex;gap:9px;align-items:center;padding:4px 2px;background:none;border:0;border-radius:4px;text-align:left}
@@ -194,6 +194,10 @@ pre{background:var(--panel2);border:var(--bw) solid var(--line);border-radius:6p
 .checks{list-style:none;margin:12px 0;padding:0;display:flex;gap:8px 18px;flex-wrap:wrap;font-size:.88rem}
 .checks li{display:flex;gap:8px;align-items:center}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+.camwrap{position:relative;width:100%;margin:0 auto;background:#000;border-radius:6px;overflow:hidden}
+.camwrap video,.camwrap svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.camwrap video{object-fit:cover}
+.camflash{position:absolute;left:0;right:0;bottom:0;padding:8px;text-align:center;background:rgba(0,0,0,.7);color:#fff;font-weight:600;font-size:.9rem}
 </style>
 </head>
 <body>
@@ -670,44 +674,122 @@ function ReactionTest({onDone}){
     {st==='run'&&pos&&<button className="target" aria-label="Target" style={{left:pos.x,top:pos.y}} onPointerDown={()=>{tm.current.push(Math.round(performance.now()-t0.current));spawn()}}/>}
    </div></div>}
 const PHOTO={eyes:['No swelling pattern seen.','Mild swelling pattern at the back of the eye. Keep watching.','Marked swelling pattern. Send to the flight surgeon.'],skin:['Skin looks normal.','Faint redness. Recheck in 1 hour.','Strong redness over a wide area. Treat as possible radiation skin injury.']};
-function PhotoCheck({kind,val,set}){const [busy,setBusy]=useState(false),[msg,setMsg]=useState(null),[cam,setCam]=useState(false),[shot,setShot]=useState(null);
+function PhotoCheck({kind,val,set}){const [busy,setBusy]=useState(false),[msg,setMsg]=useState(null),[cam,setCam]=useState(false),[shot,setShot]=useState(null),[q,setQ]=useState(null);
   const what=kind==='eyes'?'eye':'skin';
-  const run=(seed,img)=>{setBusy(true);setShot(img||null);setMsg(null);setTimeout(()=>{const r=seed%3;set(r);setMsg(PHOTO[kind][r]);setBusy(false)},1100)};
+  const run=(seed,img,qq)=>{setBusy(true);setShot(img||null);setQ(qq||null);setMsg(null);setTimeout(()=>{const r=seed%3;set(r);setMsg(PHOTO[kind][r]);setBusy(false)},1100)};
   return <div><div className="row sp"><span className="lbl">{what} photo check</span><span className="chip">simulated analyzer</span></div>
+   {!shot&&!msg&&!busy&&<p className="sub" style={{margin:'8px 0'}}>No photo yet. The camera checks focus, light and framing before it captures.</p>}
    <div className="row" style={{marginTop:8}}><button className="btn sm pri" onClick={()=>setCam(true)}>Take {what} photo</button>
-    <button className="btn sm" onClick={()=>run(1)}>Use test sample</button>{(val>0||shot||msg)&&<button className="btn sm" onClick={()=>{set(0);setMsg(null);setShot(null)}}>Clear photo</button>}{busy&&<span className="sub">Analysing…</span>}</div>
+    <button className="btn sm" onClick={()=>run(1)}>Use test sample</button>{(val>0||shot||msg)&&<button className="btn sm" onClick={()=>{set(0);setMsg(null);setShot(null);setQ(null)}}>Clear photo</button>}{busy&&<span className="sub" role="status">Analysing…</span>}</div>
    {(shot||msg)&&<div className="row" style={{marginTop:10,flexWrap:'nowrap',alignItems:'flex-start'}}>
      {shot&&<img src={shot} alt={`Submitted ${what} photo`} style={{width:96,height:72,objectFit:'cover',borderRadius:4,border:'var(--bw) solid var(--line)',flex:'none'}}/>}
-     {msg&&<span className="row" style={{flexWrap:'nowrap',alignItems:'flex-start',fontSize:'.88rem'}}><Shape lv={val===2?3:val}/><span>{shot?'Photo submitted. ':''}{msg}</span></span>}</div>}
-   {cam&&<Camera what={what} facing={kind==='eyes'?'user':'environment'} onClose={()=>setCam(false)} onSubmit={(img,seed)=>{setCam(false);run(seed,img)}}/>}</div>}
-/* live camera: preview, capture, confirm, then submit */
-function Camera({what,facing,onClose,onSubmit}){
-  const vid=useRef(),stream=useRef(null),[st,setSt]=useState('starting'),[snap,setSnap]=useState(null),[err,setErr]=useState('');
+     <span style={{display:'grid',gap:4,fontSize:'.88rem'}}>
+      {q&&<span className="sub">Photo: {q.w} × {q.h} px, {q.sharp>=PQ.SHARP_MIN?'sharp':'soft focus'}, sharpest of {q.n} frames.</span>}
+      {msg&&<span className="row" style={{flexWrap:'nowrap',alignItems:'flex-start'}}><Shape lv={val===2?3:val}/><span>{msg}</span></span>}
+      {msg&&<span className="sub">Simulated finding for the demo. It is not read from the photo.</span>}</span></div>}
+   {cam&&<Camera kind={kind} what={what} facing={kind==='eyes'?'user':'environment'} onClose={()=>setCam(false)} onSubmit={(img,seed,qq)=>{setCam(false);run(seed,img,qq)}}/>}</div>}
+/* ---- photo quality: measured on the framed region of the live picture ---- */
+const PQ={
+  SHARP_MIN:60,     // variance of the Laplacian on a 160-px-wide grey copy of the region; lower means blurred. Tuning value, no verifiable basis.
+  BRIGHT_MIN:70,    // mean brightness (0..255) below which the region is too dark. Tuning value.
+  BRIGHT_MAX:205,   // mean brightness above which it is washed out. Tuning value.
+  GLARE_MAX:4,      // % of pixels at 250 or more (blown highlights) allowed. Tuning value.
+  STEADY_MAX:6,     // mean brightness change per pixel between two checks; more means the picture is moving. Tuning value.
+  EYE_MIN_PX:110,   // eye width in camera pixels needed for a usable crop. Tuning value.
+  HOLD_MS:1000,     // every check must pass for this long before auto-capture fires
+  BURST:5,GAP_MS:70,// frames captured per photo and the gap between them; the sharpest is kept
+  TICK_MS:200       // how often the live checks run
+};
+function measure(src,r,cv){const W=160,H=Math.max(8,Math.round(W*r.h/r.w));cv.width=W;cv.height=H;const g=cv.getContext('2d',{willReadFrequently:true});g.drawImage(src,r.x,r.y,r.w,r.h,0,0,W,H);
+  const d=g.getImageData(0,0,W,H).data,G=new Float32Array(W*H);let sum=0,hot=0;
+  for(let i=0,j=0;i<d.length;i+=4,j++){const y=.299*d[i]+.587*d[i+1]+.114*d[i+2];G[j]=y;sum+=y;if(y>=250)hot++}
+  let m=0,m2=0,n=0;for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){const i=y*W+x,l=G[i-1]+G[i+1]+G[i-W]+G[i+W]-4*G[i];m+=l;m2+=l*l;n++}
+  return {sharp:m2/n-(m/n)*(m/n),bright:sum/(W*H),glare:hot/(W*H)*100,G}}
+const motion=(a,b)=>{if(!a||!b||a.length!==b.length)return 99;let s=0,n=0;for(let i=0;i<a.length;i+=3){s+=Math.abs(a[i]-b[i]);n++}return s/n};
+/* region to check and crop: the detected eye (padded, 3:2) for eye photos, a centred square for skin */
+function photoROI(kind,vw,vh,face){
+  const fit=(cx,cy,w,h)=>{w=Math.min(w,vw);h=Math.min(h,vh);return {x:Math.round(clamp(cx-w/2,0,vw-w)),y:Math.round(clamp(cy-h/2,0,vh-h)),w:Math.round(w),h:Math.round(h)}};
+  if(kind!=='eyes'){const s=Math.min(vw,vh)*.62;return {roi:fit(vw/2,vh/2,s,s)}}
+  if(face&&face.eyes.length){const e=face.eyes.map(e=>({cx:(e.x0+e.x1)/2*vw,cy:(e.y0+e.y1)/2*vh,w:(e.x1-e.x0)*vw})).sort((a,b)=>Math.hypot(a.cx-vw/2,a.cy-vh/2)-Math.hypot(b.cx-vw/2,b.cy-vh/2))[0];
+    return {roi:fit(e.cx,e.cy,e.w*2,e.w*2/1.5),eyePx:e.w}}
+  const w=vw*.42;return {roi:fit(vw/2,vh/2,w,w/1.5)}}
+/* live camera: framing overlay and quality checks, burst capture (sharpest frame kept), crop, confirm, then submit */
+function Camera({kind,what,facing,onClose,onSubmit}){
+  const vid=useRef(),stream=useRef(null),lm=useRef(null),cv=useRef(document.createElement('canvas')),roiRef=useRef(null),prevG=useRef(null),okAt=useRef(0),alive=useRef(true),busy=useRef(false);
+  const [st,setSt]=useState('starting'),[snap,setSnap]=useState(null),[err,setErr]=useState(''),[live,setLive]=useState(null),[auto,setAuto]=useState(true),[torch,setTorch]=useState(null),[eyeAI,setEyeAI]=useState(kind==='eyes'?'loading':'none');
+  const autoRef=useRef(auto);autoRef.current=auto;
   const stop=()=>{if(stream.current){stream.current.getTracks().forEach(x=>x.stop());stream.current=null}};
-  const start=async()=>{setErr('');setSnap(null);setSt('starting');
-    try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('This page cannot reach the camera. Start the app with Start-RadShield.bat and use Edge or Chrome.');
-      let s;try{s=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280}},audio:false})}catch(e){if(e.name==='OverconstrainedError')s=await navigator.mediaDevices.getUserMedia({video:true,audio:false});else throw e}
-      stream.current=s;setSt('live')}
-    catch(e){setErr(e.name==='NotAllowedError'?'Camera permission was refused. Allow the camera for this page, then try again.':e.name==='NotFoundError'?'No camera was found on this device.':e.name==='NotReadableError'?'The camera is in use by another app. Close it, then try again.':(e.message||'The camera could not be started.'));setSt('error')}};
-  useEffect(()=>{start();return stop},[]);
+  const start=async()=>{setErr('');setSnap(null);setLive(null);setSt('starting');prevG.current=null;okAt.current=0;
+    try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
+      /* ask for the largest picture the camera offers; the browser picks the closest mode it has */
+      let s;try{s=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:4096},height:{ideal:2160}},audio:false})}catch(e){if(e.name==='OverconstrainedError')s=await navigator.mediaDevices.getUserMedia({video:true,audio:false});else throw e}
+      if(!alive.current){s.getTracks().forEach(x=>x.stop());return}
+      stream.current=s;const tr=s.getVideoTracks()[0],caps=tr.getCapabilities?tr.getCapabilities():{},adv=[];
+      ['focusMode','exposureMode','whiteBalanceMode'].forEach(k=>{if(caps[k]&&caps[k].includes('continuous'))adv.push({[k]:'continuous'})});
+      if(adv.length)tr.applyConstraints({advanced:adv}).catch(()=>{});
+      setTorch(caps.torch?false:null);setSt('live')}
+    catch(e){stop();if(alive.current){setErr(camError(e));setSt('error')}}};
+  const flip=()=>{const tr=stream.current&&stream.current.getVideoTracks()[0];if(!tr)return;const on=!torch;tr.applyConstraints({advanced:[{torch:on}]}).then(()=>setTorch(on)).catch(()=>setTorch(null))};
+  useEffect(()=>{alive.current=true;start();
+    if(kind==='eyes')window.RSVision.load().then(m=>{lm.current=m;if(alive.current)setEyeAI('ready')}).catch(()=>{if(alive.current)setEyeAI('off')});
+    return()=>{alive.current=false;stop()}},[]);
+  useEffect(()=>{const h=e=>{if(e.key==='Escape'){stop();onClose()}};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[]);
   useEffect(()=>{if(st==='live'&&vid.current&&stream.current){vid.current.srcObject=stream.current;const p=vid.current.play();if(p&&p.catch)p.catch(()=>{})}},[st]);
-  const capture=()=>{const v=vid.current;if(!v||!v.videoWidth)return;const c=document.createElement('canvas'),w=Math.min(960,v.videoWidth);c.width=w;c.height=Math.round(w*v.videoHeight/v.videoWidth);
-    const g=c.getContext('2d');g.drawImage(v,0,0,c.width,c.height);let sum=1;try{const d=g.getImageData(0,0,c.width,c.height).data;for(let i=0;i<d.length;i+=4003)sum+=d[i]}catch(e){}
-    setSnap({url:c.toDataURL('image/jpeg',.85),seed:sum});stop();setSt('review')};
+  /* live checks */
+  useEffect(()=>{if(st!=='live')return;
+    const tick=()=>{const v=vid.current;if(!v||!v.videoWidth||busy.current)return;const vw=v.videoWidth,vh=v.videoHeight,now=performance.now();
+      const face=lm.current?window.RSVision.read(lm.current,v,now):null,R=photoROI(kind,vw,vh,face),q=measure(v,R.roi,cv.current),mv=motion(prevG.current,q.G);prevG.current=q.G;roiRef.current=R.roi;
+      const C=[];
+      if(kind==='eyes')C.push(!lm.current?{l:'Eye in view',ok:null}:{l:'Eye in view',ok:!!R.eyePx&&R.eyePx>=PQ.EYE_MIN_PX,fix:!R.eyePx?'No eye found. Face the camera with your eye near the centre of the outline.':'Your eye is too small in the picture. Move closer until it fills the outline.'});
+      C.push({l:'Sharp',ok:q.sharp>=PQ.SHARP_MIN,fix:'The picture is blurred. Hold still and give the camera a moment to focus.'},
+        {l:'Brightness',ok:q.bright>=PQ.BRIGHT_MIN&&q.bright<=PQ.BRIGHT_MAX,fix:q.bright<PQ.BRIGHT_MIN?'Too dark. Turn on a light or face a window.':'Too bright. Move out of direct light.'},
+        {l:'No glare',ok:q.glare<=PQ.GLARE_MAX,fix:'There is glare on the picture. Turn away from the lamp or window.'},
+        {l:'Steady',ok:mv<=PQ.STEADY_MAX,fix:'The picture is moving. Hold still.'});
+      const ok=C.every(c=>c.ok!==false);okAt.current=ok?(okAt.current||now):0;setLive({C,roi:R.roi,vw,vh,ok});
+      if(ok&&autoRef.current&&now-okAt.current>=PQ.HOLD_MS)capture()};
+    const i=setInterval(tick,PQ.TICK_MS);return()=>clearInterval(i)},[st]);
+  /* burst: grab several frames, keep the sharpest, crop it to the framed region */
+  const capture=async()=>{const v=vid.current;if(!v||!v.videoWidth||busy.current)return;busy.current=true;setSt('burst');
+    const r=roiRef.current||photoROI(kind,v.videoWidth,v.videoHeight,null).roi,ow=Math.min(1600,r.w),oh=Math.round(ow*r.h/r.w);let best=null;
+    for(let i=0;i<PQ.BURST;i++){const q=measure(v,r,cv.current);
+      if(!best||q.sharp>best.q.sharp){const c=(best&&best.c)||document.createElement('canvas');c.width=ow;c.height=oh;c.getContext('2d').drawImage(v,r.x,r.y,r.w,r.h,0,0,ow,oh);best={c,q}}
+      await new Promise(f=>setTimeout(f,PQ.GAP_MS))}
+    let sum=1;try{const d=best.c.getContext('2d').getImageData(0,0,ow,oh).data;for(let i=0;i<d.length;i+=4003)sum+=d[i]}catch(e){}
+    const url=best.c.toDataURL('image/jpeg',.92);stop();busy.current=false;if(!alive.current)return;
+    setSnap({url,seed:sum,q:{sharp:best.q.sharp,bright:best.q.bright,glare:best.q.glare,w:ow,h:oh,cam:v.videoWidth+' × '+v.videoHeight,n:PQ.BURST}});setSt('review')};
   /* self-test hooks for automated checks: #camtest captures, #camtest2 also confirms */
   useEffect(()=>{const h=location.hash;if(!h.includes('camtest'))return;let t;
-    if(st==='live')t=setTimeout(capture,900);if(st==='review'&&snap&&h.includes('camtest2'))t=setTimeout(()=>onSubmit(snap.url,snap.seed),600);return()=>clearTimeout(t)},[st,snap]);
-  return <div className="modal" role="dialog" aria-modal="true" aria-label={`Take ${what} photo`}><div className="card" style={{width:'min(680px,100%)'}}>
+    if(st==='live')t=setTimeout(capture,900);if(st==='review'&&snap&&h.includes('camtest2'))t=setTimeout(()=>onSubmit(snap.url,snap.seed,snap.q),600);return()=>clearTimeout(t)},[st,snap]);
+  const fail=live&&live.C.find(c=>c.ok===false),r=live&&live.roi,Q=snap&&snap.q;
+  const hole=r&&(kind==='eyes'?`M${r.x} ${r.y+r.h/2}a${r.w/2} ${r.h/2} 0 1 0 ${r.w} 0a${r.w/2} ${r.h/2} 0 1 0 ${-r.w} 0Z`:`M${r.x} ${r.y}h${r.w}v${r.h}h${-r.w}Z`);
+  const tips=what==='eye'?'Face the camera in good light with one eye near the centre. The photo is cropped to that eye.':'Hold the area of skin inside the square, in good light.';
+  /* rendered at the page root: the detail panel is a sticky scroller, so a dialog left inside it would sit under the figure controls and top bar */
+  return ReactDOM.createPortal(<div className="modal" role="dialog" aria-modal="true" aria-label={`Take ${what} photo`}><div className="card" style={{width:'min(720px,100%)'}}>
     <div className="row sp" style={{marginBottom:10}}><span className="lbl">{what} photo · {st==='review'?'step 2 of 2: confirm':'step 1 of 2: capture'}</span><button className="btn sm" onClick={()=>{stop();onClose()}}>Cancel</button></div>
-    {st==='starting'&&<p className="sub" role="status">Starting camera. If the browser asks, choose Allow.</p>}
-    {st==='error'&&<div><p className="note al" role="alert">{err}</p><div className="row" style={{marginTop:12}}><button className="btn pri" onClick={start}>Try again</button></div></div>}
-    {st==='live'&&<div><video ref={vid} className="camview" autoPlay playsInline muted/>
-      <p className="sub" style={{margin:'8px 0'}}>{what==='eye'?'Hold the camera level with one eye, about a hand\u2019s width away, in good light.':'Frame the area of skin so it fills the picture, in good light.'}</p>
-      <button className="btn pri" style={{width:'100%'}} onClick={capture}>Capture photo</button></div>}
-    {st==='review'&&snap&&<div><img src={snap.url} alt={`Captured ${what} photo`} className="camview"/>
-      <p style={{margin:'10px 0'}}>Is this photo sharp and well lit?</p>
-      <div className="row"><button className="btn pri" onClick={()=>onSubmit(snap.url,snap.seed)}>Use this photo</button><button className="btn" onClick={start}>Retake</button></div></div>}
-  </div></div>}
+    {st==='starting'&&<p className="sub" role="status">Starting the camera. If the browser asks, choose Allow.</p>}
+    {st==='error'&&<div><p className="note al" role="alert">{err}</p><div className="row" style={{marginTop:12}}><button className="btn pri" data-switch onClick={start}>Try again</button></div></div>}
+    {(st==='live'||st==='burst')&&<div>
+      <div className="camwrap" style={live?{aspectRatio:live.vw+'/'+live.vh,maxWidth:`calc(50vh * ${(live.vw/live.vh).toFixed(4)})`}:{aspectRatio:'4/3',maxWidth:'calc(50vh * 1.3333)'}}>
+       <video ref={vid} autoPlay playsInline muted aria-label="Camera preview"/>
+       {r&&<svg viewBox={`0 0 ${live.vw} ${live.vh}`} preserveAspectRatio="none" aria-hidden="true">
+         <path d={`M0 0H${live.vw}V${live.vh}H0Z${hole}`} fillRule="evenodd" fill="rgba(0,0,0,.5)"/>
+         <path d={hole} fill="none" stroke={live.ok?'var(--ok)':'#fff'} strokeWidth={Math.max(2,live.vw/240)} strokeDasharray={live.ok?'':`${live.vw/60} ${live.vw/90}`}/></svg>}
+       {st==='burst'&&<div className="camflash" role="status">Capturing {PQ.BURST} frames…</div>}</div>
+      <p className="sub" style={{margin:'8px 0 0'}}>{tips}{live?` Camera picture: ${live.vw} × ${live.vh} px.`:''}</p>
+      <ul className="checks">{(live?live.C:[{l:'Checking the picture…'}]).map(c=><li key={c.l}>{c.ok==null?<span className="box"/>:<Shape lv={c.ok?0:3}/>}<span>{c.l}</span></li>)}</ul>
+      {kind==='eyes'&&eyeAI!=='ready'&&<p className="sub" role="status" style={{margin:'0 0 8px'}}>{eyeAI==='loading'?'Loading eye detection (about 18 MB the first time)…':'Eye detection could not be loaded, so line your eye up with the outline yourself. The other checks still work.'}</p>}
+      <p className={'note '+(fail?'al':'')} role="status" style={{margin:'0 0 12px'}}>{!live?'Waiting for the camera picture…':fail?fail.fix:auto?'All checks pass. Hold still: capturing automatically.':'All checks pass. Capture when you are ready.'}</p>
+      <div className="row"><button className="btn pri" data-switch disabled={st==='burst'||!live} onClick={capture}>Capture now</button>
+       <button className="sw" aria-pressed={auto} onClick={()=>setAuto(x=>!x)}><i/>Auto-capture when ready</button>
+       {torch!==null&&<button className="sw" aria-pressed={torch} onClick={flip}><i/>Camera light</button>}</div></div>}
+    {st==='review'&&snap&&<div><img src={snap.url} alt={`Captured ${what} photo, cropped`} className="camview"/>
+      <ul className="checks">
+       <li><Shape lv={Q.sharp>=PQ.SHARP_MIN?0:2}/><span>Sharpness {Math.round(Q.sharp)} <span className="sub">(needs {PQ.SHARP_MIN})</span></span></li>
+       <li><Shape lv={Q.bright>=PQ.BRIGHT_MIN&&Q.bright<=PQ.BRIGHT_MAX?0:2}/><span>Brightness {Math.round(Q.bright)} <span className="sub">({PQ.BRIGHT_MIN} to {PQ.BRIGHT_MAX})</span></span></li>
+       <li><Shape lv={Q.glare<=PQ.GLARE_MAX?0:2}/><span>Glare {fx(Q.glare,1)}% <span className="sub">(up to {PQ.GLARE_MAX}%)</span></span></li></ul>
+      <p className="sub" style={{margin:'0 0 10px'}}>Sharpest of {Q.n} frames, cropped to {Q.w} × {Q.h} px from a {Q.cam} px camera picture. These numbers describe photo quality only. Awareness tool, not a diagnosis.</p>
+      <div className="row"><button className="btn pri" data-switch onClick={()=>onSubmit(snap.url,snap.seed,snap.q)}>Use this photo</button><button className="btn" onClick={start}>Retake</button></div></div>}
+  </div></div>,document.body)}
 /* hyperspace streaks while the camera travels to a body system */
 function Warp({k}){const ref=useRef();
   useEffect(()=>{const cv=ref.current;if(!k||!cv)return;const freeze=location.hash.includes('warpfreeze');
