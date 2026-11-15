@@ -178,6 +178,22 @@ pre{background:var(--panel2);border:var(--bw) solid var(--line);border-radius:6p
 .target{position:absolute;width:52px;height:52px;border-radius:50%;background:var(--acc);border:3px solid var(--text)}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
 .cols>.card{margin:0}
+.modal>.card.big{width:min(980px,100%)}
+/* eye-tracking test */
+.etvid{display:block;background:#000;border-radius:6px;object-fit:cover;transform:scaleX(-1)}
+.etvid.pre{width:100%;max-height:38vh;object-fit:contain}
+.etvid.run{position:absolute;right:16px;bottom:16px;width:7rem;height:5.25rem;opacity:.85;z-index:1}
+.modal>.card{position:relative}
+.etstage{position:relative;height:13rem;margin:10px 0;border:var(--bw) dashed var(--line);border-radius:6px;background:var(--panel2);overflow:hidden}
+.etdot{position:absolute;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:var(--acc);border:3px solid var(--text)}
+.etdot::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--onacc)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:8px;margin:10px 0}
+.tile{display:grid;gap:4px;align-content:start;border:var(--bw) solid var(--line);border-radius:6px;background:var(--panel2);padding:10px}
+.tile b{font-size:1.3rem;font-weight:600}
+.tile b small{font-size:.75rem;color:var(--mut);font-weight:400}
+.checks{list-style:none;margin:12px 0;padding:0;display:flex;gap:8px 18px;flex-wrap:wrap;font-size:.88rem}
+.checks li{display:flex;gap:8px;align-items:center}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -290,6 +306,104 @@ window.anatomySVG=function(){
   <!-- eyes -->
   <g data-k="eyes" stroke="currentColor" stroke-width="1.1">${both(eye)}</g>
   </g>`};
+
+/* ---- on-device vision: one face/eye landmark model (MediaPipe Face Landmarker), fetched only when a camera tool that needs it opens.
+        Frames are processed in this page and never leave it. ---- */
+window.RSVision=(function(){
+  const VER='1.2.2',BASE='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+VER,
+        MODEL='https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+  let p=null,idx=null;
+  const ids=C=>{const s=new Set();C.forEach(c=>{s.add(c.start);s.add(c.end)});return [...s]};
+  function load(){
+    if(!p){p=(async()=>{const m=await import(BASE+'/vision_bundle.mjs'),fs=await m.FilesetResolver.forVisionTasks(BASE+'/wasm'),F=m.FaceLandmarker;
+        idx=[[ids(F.FACE_LANDMARKS_LEFT_EYE),ids(F.FACE_LANDMARKS_LEFT_IRIS)],[ids(F.FACE_LANDMARKS_RIGHT_EYE),ids(F.FACE_LANDMARKS_RIGHT_IRIS)]];
+        const mk=d=>F.createFromOptions(fs,{baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',numFaces:1,outputFaceBlendshapes:true});
+        try{return await mk('GPU')}catch(e){return await mk('CPU')}})();
+      p.catch(()=>{p=null})}
+    return p}
+  /* one video frame -> {face box, eye boxes, closed 0..1, gaze 0..1 = iris position across the eye opening}; null when no face is found.
+     Boxes are fractions of the frame. */
+  function read(lm,video,ts){let r;try{r=lm.detectForVideo(video,ts)}catch(e){return null}
+    const L=r&&r.faceLandmarks&&r.faceLandmarks[0];if(!L||!idx)return null;
+    let x0=1,x1=0,y0=1,y1=0;for(const q of L){if(q.x<x0)x0=q.x;if(q.x>x1)x1=q.x;if(q.y<y0)y0=q.y;if(q.y>y1)y1=q.y}
+    const eyes=idx.map(([E,I])=>{let a=1,b=0,c=1,d=0;E.forEach(i=>{const q=L[i];if(q.x<a)a=q.x;if(q.x>b)b=q.x;if(q.y<c)c=q.y;if(q.y>d)d=q.y});
+      return {x0:a,x1:b,y0:c,y1:d,g:(I.reduce((s,i)=>s+L[i].x,0)/I.length-a)/Math.max(1e-6,b-a)}});
+    const B=r.faceBlendshapes&&r.faceBlendshapes[0]&&r.faceBlendshapes[0].categories,sc=n=>{const c=B&&B.find(x=>x.categoryName===n);return c?c.score:null};
+    const bl=sc('eyeBlinkLeft'),br=sc('eyeBlinkRight'),ar=(video.videoHeight||3)/(video.videoWidth||4);
+    const open=eyes.reduce((s,e)=>s+(e.y1-e.y0)*ar/Math.max(1e-6,e.x1-e.x0),0)/2;   /* lid opening / eye width, used only if blendshapes are missing */
+    return {face:{x0,x1,y0,y1},eyes,closed:bl!=null&&br!=null?(bl+br)/2:Math.max(0,Math.min(1,(.3-open)/.2)),gaze:(eyes[0].g+eyes[1].g)/2}}
+  return {load,read,VER}})();
+
+/* ---- eye-tracking fatigue test: a pure timeline and analysis, so the same code runs live from the webcam or replays synthetic samples in a self-test ---- */
+window.EyeRun=(function(){
+  /* Every cut-off below is a named constant with its basis. A 30-second webcam run is not a laboratory measurement, so the UI labels every reading "estimate". */
+  const K={
+    EYE_CLOSED:.5,     // eye-closure score (0..1) counted as "mostly closed". No verifiable basis for this model's scale: tuning value.
+    EYE_OPEN:.35,      // score at which a closure ends, lower than EYE_CLOSED so one blink is not counted twice. Tuning value, no verifiable basis.
+    BLINK_LOW:8,       // blinks/min. Resting mean is about 17/min and reading about 4.5/min (Bentivoglio et al., Mov Disord 1997); the cut-off itself is an estimate.
+    BLINK_HIGH:25,     // blinks/min. Same source reports about 26/min in conversation; using it as a fatigue cut-off has no verifiable basis: estimate.
+    PERCLOS_ELEV:8,    // % of time eyes mostly closed. No verifiable basis (half of PERCLOS_HIGH): estimate.
+    PERCLOS_HIGH:15,   // %. About 15% is a cut-off often used in driver-drowsiness research built on PERCLOS (Wierwille 1994; Dinges & Grace, FHWA 1998). That measure is 80% lid closure over minutes, so here it is an estimate.
+    CLOSE_LONG:500,    // ms. Normal blinks last roughly 100 to 400 ms; closures of 500 ms or more are commonly treated as long closures in drowsiness studies. Estimate at webcam frame rates.
+    CLOSE_VLONG:1000,  // ms. No verifiable basis (twice CLOSE_LONG): estimate.
+    LAG_ELEV:350,      // ms from a dot jump to the gaze crossing halfway. Laboratory saccade latency is about 200 ms; a webcam adds unknown delay, so no verifiable basis: estimate.
+    LAG_HIGH:500,      // ms. No verifiable basis: estimate.
+    ERR_ELEV:25,       // mean gaze-to-dot distance as % of the dot's travel. No verifiable basis: estimate.
+    GAZE_RANGE_MIN:.03,// left-to-right change in iris position (fraction of eye width) needed before gaze is trusted. Tuning value, no verifiable basis.
+    LOST_MAX:.3,       // share of frames with no face above which a run is rejected. Tuning value, no verifiable basis.
+    FACE_MIN:.2,       // pre-check: face narrower than this share of the frame is "too far". Tuning value.
+    FACE_MAX:.75,      // pre-check: wider than this is "too close". Tuning value.
+    OFF_X:.2,OFF_Y:.25,// pre-check: how far the face centre may sit from the frame centre. Tuning values.
+    DARK:55            // pre-check: mean face brightness (0..255) below which lighting is "too dim". Tuning value.
+  };
+  const JUMPS=[-1,1,-.4,.9,-.9,.3,1,-.6,.6,-1,.5,-.8,.8,0];
+  /* about 30 s: 3 calibration points, 12 s rest gaze, then either 8 s smooth + 6 jumps, or 14 jumps when smooth motion is turned off */
+  function plan(stepsOnly){const S=[],add=(name,dur,x)=>{const t0=S.length?S[S.length-1].t1:0;S.push({name,t0,t1:t0+dur,x})};
+    [0,-1,1].forEach(x=>add('cal',1500,x));add('rest',12000,0);if(!stepsOnly)add('smooth',8000,null);
+    JUMPS.slice(0,stepsOnly?14:6).forEach(x=>add('jump',1000,x));return S}
+  function run(stepsOnly){const S=plan(stepsOnly),total=S[S.length-1].t1,N=[];
+    const at=t=>{const s=S.find(s=>t<s.t1)||S[S.length-1];return {name:s.name,x:s.x==null?Math.sin(Math.max(0,t-s.t0)/4000*2*Math.PI):s.x}};
+    return {S,total,at,push:(t,s)=>N.push({t,c:s?s.closed:null,g:s?s.gaze:null}),finish:()=>analyse(S,N,at,!!stepsOnly)}}
+  const med=a=>{const b=a.slice().sort((x,y)=>x-y);return b[b.length>>1]};
+  function analyse(S,N,at,stepsOnly){
+    const tR=S.find(s=>s.name==='rest').t0,post=N.filter(n=>n.t>=tR),seen=post.filter(n=>n.c!=null);
+    if(post.length<60||seen.length/post.length<1-K.LOST_MAX)return {ok:false,why:'lost'};
+    let blinks=0,closedMs=0,longest=0,tracked=0,from=null;
+    for(let i=1;i<seen.length;i++){const a=seen[i-1],b=seen[i],dt=b.t-a.t;if(dt<250){tracked+=dt;if(a.c>=K.EYE_CLOSED)closedMs+=dt}
+      if(from==null&&b.c>=K.EYE_CLOSED)from=b.t;else if(from!=null&&b.c<K.EYE_OPEN){blinks++;longest=Math.max(longest,b.t-from);from=null}}
+    if(from!=null){blinks++;longest=Math.max(longest,seen[seen.length-1].t-from)}
+    if(tracked<5000)return {ok:false,why:'lost'};
+    /* gaze: map iris position to dot position from the three calibration points, then time the eye against the dot */
+    const open=N.filter(n=>n.g!=null&&n.c<K.EYE_OPEN);
+    const cal=S.filter(s=>s.name==='cal').map(s=>{const g=open.filter(n=>n.t>=s.t0+600&&n.t<s.t1).map(n=>n.g);return g.length>=5?g.reduce((a,b)=>a+b,0)/g.length:null});
+    const gC=cal[0],gL=cal[1],gR=cal[2],gazeOK=cal.every(g=>g!=null)&&Math.abs(gR-gL)>=K.GAZE_RANGE_MIN&&(gR-gC)*(gC-gL)>0;
+    let lag=null,err=null;
+    if(gazeOK){const X=g=>{const d=g-gC;return Math.max(-1.6,Math.min(1.6,d*(gR-gC)>0?d/(gR-gC):-d/(gL-gC)))};
+      const lats=[];S.forEach((s,i)=>{if(s.name!=='jump')return;const px=S[i-1].x==null?0:S[i-1].x,d=s.x-px;if(Math.abs(d)<.5)return;
+        const mid=px+d/2,P=open.filter(n=>n.t>=s.t0&&n.t<s.t1);
+        for(let j=0;j<P.length-1;j++)if((X(P[j].g)-mid)*d>0&&(X(P[j+1].g)-mid)*d>0){const l=P[j].t-s.t0;if(l>=80&&l<=900)lats.push(l);break}});
+      const sm=S.find(s=>s.name==='smooth');let smLag=null;
+      if(sm){const P=open.filter(n=>n.t>=sm.t0+500&&n.t<sm.t1);let best=null;
+        if(P.length>=30)for(let l=0;l<=600;l+=20){const e=P.reduce((a,n)=>a+Math.abs(X(n.g)-at(n.t-l).x),0)/P.length;if(!best||e<best.e)best={e,l}}
+        if(best){err=best.e/2*100;smLag=best.l}}
+      else{const E=[];S.forEach(s=>{if(s.name==='jump')open.forEach(n=>{if(n.t>=s.t0+600&&n.t<s.t1)E.push(Math.abs(X(n.g)-s.x))})});
+        if(E.length>=30)err=E.reduce((a,b)=>a+b,0)/E.length/2*100}
+      lag=lats.length>=3?med(lats):smLag}
+    const r={ok:true,blink:Math.round(blinks/(tracked/60000)),perclos:+(closedMs/tracked*100).toFixed(1),longest:Math.round(longest),
+      lag:lag==null?null:Math.round(lag),err:err==null?null:Math.round(err),gazeOK,secs:Math.round(tracked/1000),stepsOnly};
+    r.pts=Math.min(30,metrics(r).reduce((a,m)=>a+m.p,0));r.level=r.pts>=14?2:r.pts>=4?1:0;return r}
+  /* each number with its unit, a plain-language reading, a status level (0 ok, 1 drift, 2 act) and the points it adds to the Mind score */
+  const W=['normal','elevated','high'],band=(v,a,b)=>v==null?null:v>=b?2:v>=a?1:0;
+  function metrics(r){const pc=band(r.perclos,K.PERCLOS_ELEV,K.PERCLOS_HIGH),lc=band(r.longest,K.CLOSE_LONG,K.CLOSE_VLONG),lg=band(r.lag,K.LAG_ELEV,K.LAG_HIGH),er=r.err==null?null:r.err>=K.ERR_ELEV?1:0;
+    return [
+      Object.assign({k:'blink',l:'Blink rate',v:r.blink,u:'/min'},r.blink>K.BLINK_HIGH?{txt:'elevated',lv:1,p:4}:{txt:r.blink<K.BLINK_LOW?'low':'normal',lv:0,p:0}),
+      {k:'perclos',l:'Eyes closed (PERCLOS)',v:r.perclos,u:'%',txt:W[pc],lv:pc,p:[0,8,16][pc]},
+      {k:'longest',l:'Longest eye closure',v:r.longest,u:'ms',txt:W[lc],lv:lc,p:[0,5,10][lc]},
+      {k:'lag',l:'Gaze lag',v:r.lag,u:'ms',txt:lg==null?'':W[lg],lv:lg||0,p:lg==null?0:[0,4,8][lg]},
+      {k:'err',l:'Following error',v:r.err,u:'%',txt:er==null?'':W[er],lv:er||0,p:0}]}
+  /* synthetic sample for self-tests: regular blinks, one 0.7 s closure, gaze trailing the dot by 270 ms */
+  const sim=(t,R)=>{const b=t%3100;return {closed:(b>900&&b<1060)||(t>9000&&t<9700)?.82:.07+.03*Math.sin(t/170),gaze:.5+.07*R.at(t-270).x+.004*Math.sin(t/37),face:{x0:.3,x1:.7,y0:.2,y1:.8},eyes:[]}};
+  return {K,run,metrics,sim}})();
 </script>
 <script type="text/babel" data-presets="react">
 const {useState,useEffect,useRef,useMemo,useCallback}=React;
@@ -384,13 +498,14 @@ const FIELDS={
   water:{l:'Water today',u:' L',min:0,max:4,step:.25},cal:{l:'Food eaten vs plan',u:'%',min:30,max:110,step:5},
   antiox:{l:'Fruit / antioxidant servings',min:0,max:5},ex:{l:'Exercise today',u:' min',min:0,max:180,step:10},
 };
-const DEF={mood:4,stress:2,fatigue:2,sleep:7.5,hr:64,temp:36.7,nausea:1,blur:1,water:2.5,cal:95,antiox:3,ex:120,rt:null};
+const DEF={mood:4,stress:2,fatigue:2,sleep:7.5,hr:64,temp:36.7,nausea:1,blur:1,water:2.5,cal:95,antiox:3,ex:120,rt:null,et:null};
 /* every driver = a symptom or exposure, with the issue name and what to do about it */
 const DR={
   sleep:{l:'Short sleep',issue:'Severe sleep loss',acts:['Stop safety-critical tasks and hand over to a crewmate','Take a protected 90-minute sleep period now','Dim lights, no caffeine, and plan 8 hours tonight']},
   stress:{l:'High stress',issue:'Stress overload',acts:['Pause and breathe slowly for 5 minutes (4 s in, 6 s out)','Tell a crewmate how you feel','Request a private conference with family or psych support']},
   mood:{l:'Low mood',issue:'Low mood',acts:['Talk to a crewmate now; do not isolate','Do 20 minutes of exercise or a favourite activity','Flag it in the next flight surgeon report']},
   fatigue:{l:'Fatigue',issue:'Heavy fatigue',acts:['Stop safety-critical work','Rest 20 minutes and drink 500 ml of water','Repeat the reaction test after resting']},
+  eyefat:{l:'Eye signs of fatigue (webcam test)',issue:'Eye signs of fatigue',acts:['Stop safety-critical tasks until you have rested','Rest with your eyes closed for 20 minutes, then repeat the eye-tracking test','Check your sleep log and plan a full sleep period tonight']},
   rt:{l:'Slow reaction time',issue:'Slowed reactions',acts:['Do not pilot, dock or run EVA tasks','Rest 20 minutes, then retest','Check your sleep log and cabin CO₂']},
   confine:{l:'Time in confinement',issue:'Long confinement',acts:['Keep your daily routine and exercise','Schedule crew social time today','Use the daily check-in to track mood']},
   gcr:{l:'Accumulated radiation',issue:'High career radiation dose',acts:['Sleep and work in the best-shielded module','Skip non-essential EVAs','Report dose to the flight surgeon']},
@@ -451,6 +566,7 @@ function assess({v,day,E,H,cum,eff,photo,tags}){
   const f=cum/LIMIT,m=Math.min(1,day/180),exC=Math.min(v.ex,150)/150*.75,storm=eff>5;
   add('mind','sleep',(7-v.sleep)*12);add('mind','stress',(v.stress-2)*11);add('mind','mood',(3-v.mood)*11);add('mind','fatigue',(v.fatigue-2)*10);
   if(v.rt)add('mind','rt',Math.min(30,(v.rt-330)/4));
+  if(v.et)add('mind','eyefat',v.et.pts);
   if(H.isolation)add('mind','confine',m*18);if(H.radiation)add('mind','gcr',f*20);
   if(H.hostile)add('mind','co2',(E.co2-3000)/60);if(H.distance&&E.delay>=60)add('mind','delay',6);
   add('eyes','blur',(v.blur-1)*20);add('eyes','photo',photo.eyes*24);
@@ -625,6 +741,93 @@ function ShelterMap({loc,setLoc,storm}){return <svg viewBox="0 0 380 170" width=
     {safe&&<text x={m.x+m.w/2} y={m.y+m.h+16} textAnchor="middle" fontSize="10" fill="var(--ok)" fontWeight="700" letterSpacing="1">SAFEST ZONE</text>}
   </g>})}</svg>}
 
+/* ================= eye-tracking fatigue test ================= */
+const ETK=window.EyeRun.K;
+const ET_PHASE={cal:['Calibrating','Look at the dot each time it moves. Keep your head still.'],rest:['Rest gaze','Rest your eyes on the dot and blink normally.'],smooth:['Follow the dot','Follow the dot with your eyes only. Keep your head still.'],jump:['Follow the dot','Look at the dot as soon as it jumps.']};
+const ET_LVL=['none seen','some','strong'];
+const camError=e=>e.message==='nocam'?'This page cannot reach the camera. Open the app from http://localhost or the published site, in Edge or Chrome.'
+  :e.name==='NotAllowedError'?'Camera permission was refused. Allow the camera for this page, then try again.'
+  :e.name==='NotFoundError'?'No camera was found on this device.'
+  :e.name==='NotReadableError'?'The camera is in use by another app. Close it, then try again.'
+  :e.message==='model'?'The eye tracker could not be loaded. Check the connection, then try again.'
+  :(e.message||'The camera could not be started.');
+function EtTiles({r}){return <div className="tiles">{window.EyeRun.metrics(r).map(m=><div className="tile" key={m.k}><span className="lbl">{m.l}</span>
+  <b className="mono">{m.v==null?'–':m.v}{m.v!=null&&<small> {m.u}</small>}</b>
+  {m.v==null?<span className="sub">not measured</span>:<span className="row" style={{gap:6}}><span className={'badge c'+m.lv}><Shape lv={m.lv} size={14}/>{m.txt.toUpperCase()}</span><span className="chip">estimate</span></span>}</div>)}</div>}
+/* launcher shown in the Mind panel */
+function EyeCard({et,open,clear}){return <div><div className="row sp"><span className="lbl">30-second eye-tracking test</span><span className="chip">webcam · stays on this device</span></div>
+  {et?<div><p style={{margin:'8px 0 0',fontSize:'.88rem'}}>Fatigue signs: <b>{ET_LVL[et.level]}</b>.</p><EtTiles r={et}/></div>:<p className="sub" style={{margin:'8px 0'}}>No result yet. The test watches your blinks and how well your eyes follow a dot.</p>}
+  <div className="row"><button className="btn sm pri" onClick={open}>{et?'Run eye-tracking test again':'Start eye-tracking test'}</button>{et&&<button className="btn sm" onClick={clear}>Clear result</button>}</div></div>}
+function EyeTest({sim,auto,onClose,onDone}){
+  const [st,setSt]=useState(sim?'run':'loading'),[err,setErr]=useState(''),[checks,setChecks]=useState(null),[phase,setPhase]=useState('cal'),[res,setRes]=useState(null);
+  const [stepsOnly,setStepsOnly]=useState(()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const vid=useRef(),stream=useRef(null),lm=useRef(null),raf=useRef(0),dot=useRef(),bar=useRef(),cv=useRef(null),lastT=useRef(-1),alive=useRef(true),so=useRef(stepsOnly);so.current=stepsOnly;
+  const stop=()=>{cancelAnimationFrame(raf.current);if(stream.current){stream.current.getTracks().forEach(x=>x.stop());stream.current=null}};
+  const boot=async()=>{setErr('');setChecks(null);setSt('loading');
+    try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
+      const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}},audio:false});
+      if(!alive.current){s.getTracks().forEach(x=>x.stop());return}
+      stream.current=s;
+      try{lm.current=await window.RSVision.load()}catch(e){throw new Error('model')}
+      if(alive.current)setSt('pre')}
+    catch(e){stop();if(alive.current){setErr(camError(e));setSt('error')}}};
+  useEffect(()=>{alive.current=true;if(!sim)boot();return()=>{alive.current=false;stop()}},[]);
+  useEffect(()=>{const h=e=>{if(e.key==='Escape')onClose()};window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)},[]);
+  /* undefined = no new video frame yet, null = frame with no face in it */
+  const sample=()=>{const v=vid.current;if(!v||v.readyState<2||!lm.current||v.currentTime===lastT.current)return undefined;lastT.current=v.currentTime;return window.RSVision.read(lm.current,v,performance.now())};
+  const luma=(v,f)=>{const c=cv.current||(cv.current=document.createElement('canvas'));c.width=c.height=16;
+    try{const g=c.getContext('2d',{willReadFrequently:true}),W=v.videoWidth,H=v.videoHeight;g.drawImage(v,f.x0*W,f.y0*H,(f.x1-f.x0)*W,(f.y1-f.y0)*H,0,0,16,16);
+      const d=g.getImageData(0,0,16,16).data;let s=0;for(let i=0;i<d.length;i+=4)s+=.299*d[i]+.587*d[i+1]+.114*d[i+2];return s/256}catch(e){return 128}};
+  const precheck=s=>{if(!s)return [{l:'Face found',ok:false,fix:'No face found. Sit facing the camera with your whole face in view.'},{l:'Lighting'},{l:'Distance'},{l:'Centred'}];
+    const f=s.face,w=f.x1-f.x0,cx=(f.x0+f.x1)/2,cy=(f.y0+f.y1)/2,b=luma(vid.current,f);
+    return [{l:'Face found',ok:true},
+      {l:'Lighting',ok:b>=ETK.DARK,fix:'Lighting is too dim. Turn on a light in front of you, not behind you.'},
+      {l:'Distance',ok:w>=ETK.FACE_MIN&&w<=ETK.FACE_MAX,fix:w<ETK.FACE_MIN?'Your face is too far away. Move closer, to about an arm’s length from the screen.':'Your face is too close. Move back until your whole face is in view.'},
+      {l:'Centred',ok:Math.abs(cx-.5)<=ETK.OFF_X&&Math.abs(cy-.5)<=ETK.OFF_Y,fix:'Your face is off-centre. Move so it sits in the middle of the picture.'}]};
+  /* pre-check loop */
+  useEffect(()=>{if(st!=='pre')return;const v=vid.current;if(v&&stream.current&&v.srcObject!==stream.current){v.srcObject=stream.current;const p=v.play();if(p&&p.catch)p.catch(()=>{})}
+    let last=0,okAt=0;
+    const loop=()=>{raf.current=requestAnimationFrame(loop);const s=sample();if(s===undefined)return;const now=performance.now(),C=precheck(s),ok=C.every(c=>c.ok);
+      okAt=ok?(okAt||now):0;if(now-last>250){last=now;setChecks(C)}
+      if(auto&&ok&&now-okAt>2000)setSt('run')};
+    loop();return()=>cancelAnimationFrame(raf.current)},[st]);
+  /* the test itself */
+  useEffect(()=>{if(st!=='run')return;const R=window.EyeRun.run(so.current);let t0=performance.now(),ph='';
+    if(sim){const skip=sim==='done'?R.total:sim==='follow'?R.S.find(s=>s.name==='smooth'||s.name==='jump').t0+1300:0;for(let t=0;t<skip;t+=33)R.push(t,window.EyeRun.sim(t,R));t0-=skip}
+    const loop=()=>{const t=performance.now()-t0;
+      if(t>=R.total){const r=R.finish();stop();setRes(r);setSt(r.ok?'done':'bad');if(r.ok)onDone(r);return}
+      raf.current=requestAnimationFrame(loop);const a=R.at(t);
+      if(dot.current)dot.current.style.left=(8+(a.x+1)*42)+'%';if(bar.current)bar.current.style.width=(t/R.total*100)+'%';if(a.name!==ph){ph=a.name;setPhase(ph)}
+      const s=sim?window.EyeRun.sim(t,R):sample();if(s!==undefined)R.push(t,s)};
+    loop();return()=>cancelAnimationFrame(raf.current)},[st]);
+  const fail=checks&&checks.find(c=>c.ok===false),ready=!!checks&&!fail;
+  const head={loading:'starting',error:'camera problem',pre:'step 1 of 3: position',run:'step 2 of 3: test',done:'step 3 of 3: result',bad:'no result'}[st];
+  return <div className="modal" role="dialog" aria-modal="true" aria-label="Eye-tracking fatigue test"><div className="card big">
+    <div className="row sp" style={{marginBottom:10}}><span className="lbl">Eye-tracking fatigue test · {head}</span><button className="btn sm" onClick={onClose}>Close</button></div>
+    {st==='loading'&&<p className="sub" role="status">Starting the camera and loading the eye tracker (about 18 MB the first time). If the browser asks, choose Allow.</p>}
+    {st==='error'&&<div><p className="note al" role="alert">{err}</p><p className="sub">The tap reaction test in the Mind panel works without the camera.</p>
+      <div className="row"><button className="btn pri" data-switch onClick={boot}>Try again</button></div></div>}
+    {!sim&&(st==='pre'||st==='run')&&<video ref={vid} className={'etvid '+st} autoPlay playsInline muted aria-label="Camera preview"/>}
+    {st==='pre'&&<div>
+      <p style={{margin:'10px 0 0',fontSize:'.92rem'}}>Sit facing the screen at about arm’s length. For about 30 seconds you will rest your gaze on a dot, then follow it as it moves. Video stays on this device.</p>
+      <ul className="checks">{(checks||[{l:'Looking for your face…'}]).map(c=><li key={c.l}>{c.ok==null?<span className="box"/>:<Shape lv={c.ok?0:3}/>}<span>{c.l}</span></li>)}</ul>
+      <p className={'note '+(fail?'al':'')} role="status" style={{margin:'0 0 12px'}}>{!checks?'Checking the picture…':fail?fail.fix:auto?'Ready. Starting automatically…':'Ready. Keep this position and start the test.'}</p>
+      <label className="chk" style={{marginBottom:12}}><input type="checkbox" checked={stepsOnly} onChange={e=>setStepsOnly(e.target.checked)}/><span>Steps only: the dot jumps between positions and never glides. On by default when your device asks for reduced motion.</span></label>
+      <button className="btn pri" data-switch disabled={!ready} onClick={()=>setSt('run')}>Start test</button></div>}
+    {st==='run'&&<div>
+      <div className="row sp" style={{margin:'10px 0 0'}}><b>{ET_PHASE[phase][0]}</b><span className="sub" role="status">{ET_PHASE[phase][1]}</span></div>
+      <div className="etstage"><i ref={dot} className="etdot" style={{left:'50%'}}/></div>
+      <div className="meter" role="progressbar" aria-label="Test progress"><i ref={bar} style={{background:'var(--acc)',width:0}}/></div></div>}
+    {st==='done'&&res&&<div>
+      <h2 style={{fontSize:'1.2rem',margin:'6px 0'}}>Fatigue signs: {ET_LVL[res.level]}</h2>
+      <EtTiles r={res}/>
+      {!res.gazeOK&&<p className="note">Gaze could not be calibrated, so lag and following error were not measured. Blink and eye-closure numbers are still valid. Sit closer and keep your head still to measure gaze.</p>}
+      <p className="sub">Recorded to Mind from {res.secs} seconds of tracking{res.stepsOnly?', steps only':''}. Awareness tool, not a diagnosis: these are webcam estimates and the cut-offs are approximate.</p>
+      <div className="row"><button className="btn pri" data-switch onClick={onClose}>Done</button><button className="btn" onClick={sim?()=>setSt('run'):boot}>Run again</button></div></div>}
+    {st==='bad'&&<div><p className="note al" role="alert">Your face was out of view for too much of the test, so there is no result. Sit so your whole face stays in the picture, then run it again.</p>
+      <div className="row"><button className="btn pri" data-switch onClick={sim?()=>setSt('run'):boot}>Run again</button></div></div>}
+  </div></div>}
+
 /* ================= workout routine ================= */
 function buildRoutine(A,tags,sheltering){
   const has=(r,id,min=8)=>A[r].drivers.some(d=>d.id===id&&d.pts>=min),B=[];
@@ -654,7 +857,7 @@ function App(){
   const [vits,setVits]=useState({}),[photos,setPhotos]=useState({}),[done,setDone]=useState({});
   const [sel,setSel]=useState(null),[tab,setTab]=useState('monitor'),[ack,setAck]=useState({}),[checkin,setCheckin]=useState(null),[checkins,setCheckins]=useState([]);
   const [mode,setMode]=useState('dark'),[str,setStr]=useState(100),[large,setLarge]=useState(false),[scan,setScan]=useState(false),[scanIdx,setScanIdx]=useState(0),[voice,setVoice]=useState(()=>load('rs2_voice',false)),[heard,setHeard]=useState('');
-  const [persona,setPersona]=useState(()=>clamp(load('rs2_persona',0),0,PERSONAS.length-1)),[warpN,setWarpN]=useState(0),[speakOn,setSpeakOn]=useState(true),[ptab,setPtab]=useState('status'),[menu,setMenu]=useState(false),[a11y,setA11y]=useState(false),[mic,setMic]=useState('off');
+  const [persona,setPersona]=useState(()=>clamp(load('rs2_persona',0),0,PERSONAS.length-1)),[warpN,setWarpN]=useState(0),[speakOn,setSpeakOn]=useState(true),[ptab,setPtab]=useState('status'),[menu,setMenu]=useState(false),[etOpen,setEtOpen]=useState(null),[a11y,setA11y]=useState(false),[mic,setMic]=useState('off');
   const speaking=useRef(false),speakRef=useRef(true),micStream=useRef(null),personaRef=useRef(0),firstSel=useRef(true);speakRef.current=speakOn;personaRef.current=persona;
   useEffect(()=>{try{speechSynthesis.getVoices()}catch(e){}},[]);
   useEffect(()=>{if(firstSel.current){firstSel.current=false;return}setWarpN(n=>n+1)},[sel]);
@@ -695,15 +898,17 @@ function App(){
   useEffect(()=>{if(!a11y)return;const h=e=>{if(!e.target.closest('.a11ywrap'))setA11y(false)};document.addEventListener('pointerdown',h);return()=>document.removeEventListener('pointerdown',h)},[a11y]);
   /* scan + keyboard */
   useEffect(()=>{if(!scan)return;const i=setInterval(()=>setScanIdx(x=>(x+1)%RK.length),1800);return()=>clearInterval(i)},[scan]);
-  useEffect(()=>{const h=e=>{if(e.key==='Escape'){if(urgent)doAck();else if(checkin!==null)setCheckin(null);else if(a11y)setA11y(false);else if(menu)setMenu(false);return}
+  useEffect(()=>{const h=e=>{if(e.key==='Escape'){if(urgent)doAck();else if(checkin!==null)setCheckin(null);else if(etOpen)setEtOpen(null);else if(a11y)setA11y(false);else if(menu)setMenu(false);return}
      if(!scan||e.code!=='Space')return;if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;e.preventDefault();
-     if(urgent)doAck();else{setSel(RK[scanIdx]);setTab('monitor')}};
+     if(urgent)doAck();else if(document.querySelector('.modal')){const sw=document.querySelector('.modal [data-switch]:not(:disabled)');if(sw)sw.click()}   /* one switch presses the main action of an open dialog */
+     else{setSel(RK[scanIdx]);setTab('monitor')}};
     window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)});
 
   /* voice commands */
   const cmd=useRef();cmd.current=t=>{t=t.toLowerCase().trim().replace(/[.!?]+$/,'');setHeard(t);
     const pi=PERSONAS.findIndex(p=>new RegExp('\\b'+p.n.toLowerCase()+'\\b').test(t));if(pi>=0){setSpeakOn(true);speakRef.current=true;pickVoice(pi);return}
     if(!['mind','brain','eye','eyes','heart','immune','gut','bone','bones','muscle','radiation','status','help','fitness','trends'].includes(t)&&pressByVoice(t,true))return;
+    if(/eye.?track|fatigue test|\beye test\b/.test(t)){setSel('mind');setTab('monitor');setPtab('status');setEtOpen({sim:null});say('Opening the eye-tracking test. Face the screen and follow the instructions.');return}
     const EV=[['station',/space station|\bstation\b|low earth orbit/],['lunar',/\blunar\b|\bmoon\b/],['transit',/mars transit|\btransit\b|deep space/],['rover',/\brover\b/]].find(x=>x[1].test(t));
     if(EV&&!/\d/.test(t)){setEnv(EV[0]);setRateMan(null);say('Environment set to '+ENVS[EV[0]].name+'. Background dose rate '+ENVS[EV[0]].rate+' millisieverts per day.');return}
     /* sliders by voice: "stress 4", "set temperature to 39.2", "radiation 50 percent", "increase sleep", "strength maximum" */
@@ -728,7 +933,7 @@ function App(){
     if(/\b(stop talking|stop speaking|be quiet|quiet|silence|stop reading)\b/.test(t)){hush();return}
     if(/what should i (look|check|do first)|recommend|what now|what next|suggest|where (do|should) i start/.test(t)){say(advise());return}
     if(/\b(status|summary|how am i)\b/.test(t)){say(statusText());return}
-    if(/\b(help|what can i say|commands)\b/.test(t)){say('You can say a body system, such as heart. Set any slider, such as stress 4 or radiation 50 percent. Say the name of any button to press it. Ask what should I look at, explain the heart, read this aloud, or read the report. Say reset view to zoom out, and stop talking to silence me.');return}
+    if(/\b(help|what can i say|commands)\b/.test(t)){say('You can say a body system, such as heart. Set any slider, such as stress 4 or radiation 50 percent. Say the name of any button to press it. Say eye tracking test to check for fatigue with the camera. Ask what should I look at, explain the heart, read this aloud, or read the report. Say reset view to zoom out, and stop talking to silence me.');return}
     if(/explain|tell me about|what is|what are|describe|learn about|teach/.test(t)&&rk){openR(rk);setPtab('guide');say(`${REG[rk].name}. ${GUIDE[rk].ov} ${GUIDE[rk].fn} ${GUIDE[rk].how}`);return}
     if(/\b(read|aloud|out loud)\b/.test(t)){if(t.includes('report')){setTab('report');say(reportSpeech())}else if(/fact/.test(t)&&(rk||sel)){const k=rk||sel;openR(k);setPtab('guide');say('Key facts. '+GUIDE[k].facts.join(' '))}else if(rk){openR(rk);say(regionText(rk,true))}else say(readPanel());return}
     if(/what (should|do|can) i do|next steps|actions/.test(t)){const k=rk||sel||RK.slice().sort((a,b)=>A[b].score-A[a].score)[0];openR(k);say(regionText(k,true));return}
@@ -797,7 +1002,9 @@ function App(){
     catch(err){setWx({mode:'sim',events:[{l:'M2.1 flare (simulated)'},{l:'Proton flux 4 pfu (simulated)'},{l:'Geomagnetic Kp 2, quiet (simulated)'}],loading:false,msg:'NASA DONKI could not be reached from this browser.'})}};
   useEffect(()=>{fetchWx();const h=decodeURIComponent(location.hash);const cm=h.match(/cmd=([^#]+)/);if(cm)cm[1].split(';').forEach((x,i)=>setTimeout(()=>cmd.current(x),300+i*350)); /* demo presets: #flare #ff #fever #light #contrast #night #fitness #report #trends */
     if(h.includes('flare'))flare();if(h.includes('ff'))ff();if(h.includes('fever')){setVits(s=>({...s,a1:{...DEF,temp:39.2,sleep:5}}));setSel('immune')}
-    ['light','contrast','night'].forEach(m=>{if(h.includes(m))setMode(m)});['fitness','report','trends','log'].forEach(m=>{if(h.includes(m))setTab(m)});if(h.includes('noack'))setAck({immune:'fever',radiation:'rate',gut:'storm'})},[]);
+    ['light','contrast','night'].forEach(m=>{if(h.includes(m))setMode(m)});['fitness','report','trends','log'].forEach(m=>{if(h.includes(m))setTab(m)});if(h.includes('noack'))setAck({immune:'fever',radiation:'rate',gut:'storm'});
+    /* eye-test self-tests: #eyetest (real camera), =run, =follow, =done replay synthetic samples, =saved records a synthetic result */
+    const em=h.match(/eyetest(?:=(\w+))?/);if(em){setSel('mind');if(em[1]==='saved'){const R=window.EyeRun.run(false);for(let t=0;t<R.total;t+=33)R.push(t,window.EyeRun.sim(t,R));const r=R.finish();setVits(s=>({...s,a1:{...(s.a1||DEF),et:r}}))}else setEtOpen({sim:em[1]||null})}},[]);
 
   /* series */
   const series=useMemo(()=>{const out=[],step=Math.max(1,Math.round(day/60));let cc=c.prior;
@@ -949,7 +1156,7 @@ function App(){
          <button className="btn sm" onClick={fetchWx} disabled={wx.loading}>{wx.loading?'Fetching…':'Fetch Live NASA DONKI'}</button></div>}
 
        {r.fields.length>0&&<div><hr/><span className="lbl">Self-check · move a slider to test</span>{r.fields.map(k=><Field key={k} k={k} v={v} set={set}/>)}</div>}
-       {sel==='mind'&&<div><hr/><ReactionTest onDone={ms=>{set('rt',ms);toast('Reaction time '+ms+' ms recorded.')}}/></div>}
+       {sel==='mind'&&<div><hr/><ReactionTest onDone={ms=>{set('rt',ms);toast('Reaction time '+ms+' ms recorded.')}}/><hr/><EyeCard et={v.et} open={()=>setEtOpen({sim:null})} clear={()=>set('et',null)}/></div>}
        {sel==='eyes'&&<div><hr/><PhotoCheck kind="eyes" val={photo.eyes} set={x=>setPhotos(s=>({...s,[crewId]:{...photo,eyes:x}}))}/></div>}
        <hr/><span className="lbl">{a.lv>=1?'Suggested actions':'Keep it this way'} · tick when done</span>
        {acts.map(t=>{const key=crewId+sel+t;return <label key={key} className={'chk '+(done[key]?'done':'')}><input type="checkbox" checked={!!done[key]} onChange={e=>setDone(d=>({...d,[key]:e.target.checked}))}/>{t}</label>})}
@@ -970,6 +1177,8 @@ function App(){
    </main>
 
    {checkin!==null&&<CheckIn step={checkin} setStep={setCheckin} v={v} set={set} A={A} onSave={()=>{const e={crewId,day,at:new Date().toISOString(),v:{...v},status:Object.fromEntries(RK.map(k=>[k,LV[A[k].lv]]))};setCheckins(x=>[...x,e]);setCheckin(null);toast('Check-in saved for '+c.name+'.')}}/>}
+
+   {etOpen&&<EyeTest sim={etOpen.sim} auto={scan} onClose={()=>setEtOpen(null)} onDone={r=>{set('et',r);toast('Eye-tracking result recorded: fatigue signs '+ET_LVL[r.level]+'.')}}/>}
 
    {urgent&&<div className="hzwrap" role="alertdialog" aria-modal="true" aria-labelledby="hzt"><div className="hz"><div className="stripe"/><div className="in">
      <div className="tag"><Shape lv={3} size={18}/>ALERT · {REG[urgent.k].name.toUpperCase()}</div>
@@ -1004,7 +1213,7 @@ function HealthLog({c,setCrew,checkins}){
     <table style={{marginTop:12}}><thead><tr><th>Date</th><th>Type</th><th>Record</th><th></th></tr></thead><tbody>
      {rows.map(e=><tr key={e.id}><td className="mono" style={{whiteSpace:'nowrap'}}>{e.date}</td><td><span className="chip">{TAGS[e.tag]}</span></td><td>{e.note}</td><td><button className="btn sm" onClick={()=>up(l=>l.filter(x=>x.id!==e.id))}>Remove</button></td></tr>)}
     </tbody></table>
-    {checkins.length>0&&<div><hr/><span className="lbl">Mission check-ins</span><table><tbody>{checkins.map((x,i)=><tr key={i}><td className="mono">Day {x.day}</td><td>{Object.entries(x.status).filter(([k,s])=>s!=='OK').map(([k,s])=>REG[k].name+' '+s).join(', ')||'All systems OK'}</td></tr>)}</tbody></table></div>}</div>
+    {checkins.length>0&&<div><hr/><span className="lbl">Mission check-ins</span><table><tbody>{checkins.map((x,i)=><tr key={i}><td className="mono">Day {x.day}</td><td>{Object.entries(x.status).filter(([k,s])=>s!=='OK').map(([k,s])=>REG[k].name+' '+s).join(', ')||'All systems OK'}{x.v&&x.v.et?` · Eye-tracking test: fatigue signs ${ET_LVL[x.v.et.level]} (blink ${x.v.et.blink}/min, eyes closed ${x.v.et.perclos}%)`:''}</td></tr>)}</tbody></table></div>}</div>
    <div className="card right"><h3>Add a record</h3>
     <div className="field"><label htmlFor="ld">Date</label><input id="ld" type="date" value={f.date} onChange={e=>setF({...f,date:e.target.value})}/></div>
     <div className="field"><label htmlFor="lt">Type</label><select id="lt" value={f.tag} onChange={e=>setF({...f,tag:e.target.value})}>{Object.entries(TAGS).map(([k,t])=><option key={k} value={k}>{t}</option>)}</select></div>
@@ -1045,7 +1254,7 @@ function Report({report,c}){const [json,setJson]=useState(false);
   const text=useMemo(()=>{const r=report,L=[];L.push('FLIGHT SURGEON REPORT (SIMULATED DATA)','Awareness summary. Not a diagnosis.','',`Crew member : ${r.crew.name}, ${r.crew.role}`,`Mission day : ${r.missionDay}`,`Environment : ${r.environment}`,`Hazards on  : ${r.hazardsActive.join('; ')||'none'}`,'',
     'RADIATION',`  Career dose : ${r.radiation.careerDoseMSv} of ${r.radiation.limitMSv} mSv (${r.radiation.percentOfLimit}%)`,`  Rate now    : ${r.radiation.currentRateMSvPerDay} mSv/day in ${r.radiation.location}`,'','BODY SYSTEMS');
     r.systems.forEach(s=>L.push(`  ${s.system.padEnd(22)}${s.status.padEnd(7)}${s.drivers.slice(0,3).join('; ')}`));
-    L.push('','LATEST SELF-CHECK',`  Sleep ${r.latestInputs.sleep} h, stress ${r.latestInputs.stress}/5, mood ${r.latestInputs.mood}/5, fatigue ${r.latestInputs.fatigue}/5`,`  Pulse ${r.latestInputs.hr} bpm, temp ${r.latestInputs.temp} C, nausea ${r.latestInputs.nausea}/5, vision blur ${r.latestInputs.blur}/5`,`  Water ${r.latestInputs.water} L, food ${r.latestInputs.cal}% of plan, exercise ${r.latestInputs.ex} min`+(r.latestInputs.rt?`, reaction ${r.latestInputs.rt} ms`:''),'',`Check-ins saved: ${r.checkIns}. Countermeasures completed: ${r.countermeasuresCompleted}. Cell repair score: ${r.repairScore}/100.`);return L.join('\n')},[report]);
+    L.push('','LATEST SELF-CHECK',`  Sleep ${r.latestInputs.sleep} h, stress ${r.latestInputs.stress}/5, mood ${r.latestInputs.mood}/5, fatigue ${r.latestInputs.fatigue}/5`,`  Pulse ${r.latestInputs.hr} bpm, temp ${r.latestInputs.temp} C, nausea ${r.latestInputs.nausea}/5, vision blur ${r.latestInputs.blur}/5`,`  Water ${r.latestInputs.water} L, food ${r.latestInputs.cal}% of plan, exercise ${r.latestInputs.ex} min`+(r.latestInputs.rt?`, reaction ${r.latestInputs.rt} ms`:''),...(r.latestInputs.et?[`  Eye tracking (webcam estimates): blink ${r.latestInputs.et.blink}/min, eyes closed ${r.latestInputs.et.perclos}%, longest closure ${r.latestInputs.et.longest} ms`+(r.latestInputs.et.lag!=null?`, gaze lag ${r.latestInputs.et.lag} ms`:'')+`; fatigue signs ${ET_LVL[r.latestInputs.et.level]}`]:[]),'',`Check-ins saved: ${r.checkIns}. Countermeasures completed: ${r.countermeasuresCompleted}. Cell repair score: ${r.repairScore}/100.`);return L.join('\n')},[report]);
   const out=json?JSON.stringify(report,null,2):text;
   const dl=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:json?'application/json':'text/plain'}));a.download=`surgeon-report-day${report.missionDay}.${json?'json':'txt'}`;a.click()};
   return <div className="card"><div className="row sp" style={{marginBottom:12}}><h2 style={{fontSize:'1.15rem',margin:0}}>Flight surgeon report: {c.name}</h2>
