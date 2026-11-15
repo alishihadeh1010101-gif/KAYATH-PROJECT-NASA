@@ -6,8 +6,7 @@
 <title>RadShield-MD</title>
 <style>
 :root{--bg:#040b1c;--panel:#0a1630;--panel2:#10203f;--line:#213a66;--text:#f2f5fb;--mut:#93a7c8;--acc:#5b9bff;--acc2:#fc3d21;--onacc:#04122b;
-  --ok:#34d399;--drift:#facc15;--act:#fb923c;--alert:#f87171;--glyph:#04121a;--bw:1px;
-  --figfill:#10141d;--figline:#8d98ae;--facet:#ffffff;--bok:#3ecf8e;--bdrift:#f2c94c;--bact:#f2994a;--balert:#ff6b5e}
+  --ok:#34d399;--drift:#facc15;--act:#fb923c;--alert:#f87171;--glyph:#04121a;--bw:1px}
 *{box-sizing:border-box}
 html{font-size:15px}
 html[data-large=true]{font-size:18.75px}
@@ -108,6 +107,7 @@ input[type=range]{width:100%;accent-color:var(--acc);height:26px;margin:0}
 input[type=number],input[type=text],input[type=date],select,textarea{width:100%;background:var(--panel2);color:var(--text);border:var(--bw) solid var(--line);border-radius:6px;padding:9px;min-height:42px;font:inherit}
 /* figure */
 .fig{position:relative;margin:0 auto;aspect-ratio:720/850;width:min(100%,780px,max(400px,calc((100vh - var(--top) - 8rem)*.847)))}
+.anat{--figfill:var(--panel2);--figline:var(--mut)}
 .cam{position:absolute;inset:0;transform-origin:0 0;transition:transform .85s cubic-bezier(.22,.8,.2,1)}
 @media(prefers-reduced-motion:reduce){.cam{transition:none}}
 .fig svg{position:absolute;inset:0;width:100%;height:100%}
@@ -205,7 +205,7 @@ window.anatomySVG=function(){
   const fingers=[[[11,33],[13,66],7.4],[[3.5,35],[4.5,72],7.8],[[-4.5,35],[-5,68],7.4],[[-12,33],[-14.5,58],6.4]];
   const palm='M-9,-7L9,-7L15,12L16,35L-16,36L-14,12Z',thumb='M11,6L23,24L27,43';
   const hand=pass=>{const o=pass===1,c=o?'var(--figline)':'var(--figfill)',x=o?2.4:0;
-    return `<g transform="translate(134.5 431) rotate(-12)" fill="none" stroke="${c}" stroke-linecap="butt" stroke-linejoin="miter">
+    return `<g transform="translate(134.5 431) rotate(-12)" fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round">
       <path d="${palm}" fill="${c}" stroke-width="${o?2.4:.01}"/>
       ${fingers.map(([a,b,w])=>`<path d="M${a}L${b}" stroke-width="${w+x}"/>`).join('')}<path d="${thumb}" stroke-width="${9+x}"/>
       ${o?'':``}</g>`};
@@ -215,26 +215,22 @@ window.anatomySVG=function(){
   const gyri='M3 30c5-2 9 1 8 6-1 4 3 6 6 4M14 29c5 2 9 6 9 11M4 42c4-3 9-1 9 3 0 4 5 5 8 2M25 45c-3 3-1 7 3 7M4 52c5-2 8 2 7 5 3 2 7 1 9-2M3 60c4-2 8 0 10 2M18 36c2 3 6 3 7 0';
   const eye=`<g transform="translate(13 78)"><path d="M-6.5 0Q0-5 6.5 0Q0 3.6 -6.5 0Z" fill="var(--figfill)"/><circle r="2" fill="currentColor" stroke="none"/></g>`;
 
-  /* low-poly mannequin: straight-edged silhouette, filled with a mirrored mesh of flat-shaded facets lit from the viewer's left */
-  const poly=P=>'M'+P.map(p=>p.join(',')).join('L')+'Z';
-  const OUT=poly(mirror(BODY.filter((p,i)=>i%2===0||i===BODY.length-1))),HOUT=poly(mirror(HEAD));
-  const rn=(i,j)=>{const x=Math.sin(i*127.1+j*311.7)*43758.5453;return x-Math.floor(x)};
-  const C=24,pt=(i,j)=>[i===0?0:+(i*C+(rn(i,j)-.5)*15).toFixed(1),+(12+j*C+(rn(j+50,i)-.5)*15).toFixed(1)];
-  let facets='';
-  for(let j=0;j<35;j++)for(let i=0;i<7;i++){const a=pt(i,j),b=pt(i+1,j),c=pt(i,j+1),d=pt(i+1,j+1),T=rn(i+9,j+3)>.5?[[a,b,c],[b,d,c]]:[[a,b,d],[a,d,c]];
-    T.forEach((t,n)=>[1,-1].forEach(sx=>{const o=(.015+.12*rn(i*2+n+(sx<0?31:0),j+7)+(sx<0?.035:0)).toFixed(3);
-      facets+=`<path d="M${t.map(p=>sx*p[0]+','+p[1]).join('L')}Z" fill-opacity="${o}"/>`}))}
-
   return `<g transform="translate(360 0)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-  <defs><clipPath id="bodyclip"><path d="${OUT}"/><path d="${HOUT}"/></clipPath><radialGradient id="aur" cx="50%" cy="50%" r="50%"><stop offset="62%" stop-color="var(--c-radiation)" stop-opacity="var(--aura,.1)"/><stop offset="100%" stop-color="var(--c-radiation)" stop-opacity="0"/></radialGradient></defs>
+  <defs><radialGradient id="aur" cx="50%" cy="50%" r="50%"><stop offset="62%" stop-color="var(--c-radiation)" stop-opacity="var(--aura,.1)"/><stop offset="100%" stop-color="var(--c-radiation)" stop-opacity="0"/></radialGradient></defs>
   <ellipse cx="0" cy="827" rx="118" ry="8" fill="#000" opacity=".25" stroke="none"/>
   <g data-k="radiation"><ellipse cx="0" cy="424" rx="188" ry="420" fill="url(#aur)"/><ellipse class="aura" cx="0" cy="424" rx="178" ry="412" stroke="currentColor" stroke-width="1" stroke-dasharray="1 7"/></g>
 
   ${both(hand(1))}
-  <path d="${OUT}" fill="var(--figfill)" stroke="none"/><path d="${HOUT}" fill="var(--figfill)" stroke="none"/>
-  <g clip-path="url(#bodyclip)" fill="var(--facet)" stroke="var(--facet)" stroke-opacity=".05" stroke-width=".5" stroke-linejoin="miter" pointer-events="none">${facets}</g>
+  <g fill="var(--figfill)" stroke="var(--figline)" stroke-width="1.2"><path d="${spline(mirror(BODY))}"/></g>
   ${both(hand(2))}
-  <g fill="none" stroke="var(--figline)" stroke-width="1.1" stroke-linejoin="miter" opacity=".7" pointer-events="none"><path d="${OUT}"/><path d="${HOUT}"/></g>
+  <g fill="var(--figfill)" stroke="var(--figline)" stroke-width="1.2">
+    ${both('<path d="M32 68c4-3 7 0 6.5 7-.5 7-3 11-6.5 11"/>')}<path d="${spline(mirror(HEAD))}"/></g>
+
+  <!-- surface anatomy -->
+  <g stroke="var(--figline)" stroke-width=".8" opacity=".55">
+    ${both('<path d="M16 122Q12 140 5 153M64 352Q40 392 8 420M36 818v7M44 820v6M52 820v6M59 818v6M30 606q14 -10 27 0M32 628q12 7 24 0M58 440Q46 520 50 584M76 172Q84 204 76 226"/><path d="M5 67q9-5 18-1" />')}
+    <path d="M-4 96q4 3.5 8 0M-2 82L-4 93M2 82L4 93M-9 106q9 3.5 18 0M-5 111q5 2 10 0M0 327a3 3 0 1 0 .1 0"/>
+  </g>
 
   <!-- skeleton, neutral parts -->
   <g stroke="var(--figline)" stroke-width=".9" opacity=".6">
@@ -302,7 +298,6 @@ const {useState,useEffect,useRef,useMemo,useCallback}=React;
 const LIMIT=600;
 const LV=['OK','DRIFT','ACT','ALERT'];
 const LVC=['var(--ok)','var(--drift)','var(--act)','var(--alert)'];
-const BV=['var(--bok)','var(--bdrift)','var(--bact)','var(--balert)'];   /* status colours on the dark body */
 const lvl=s=>s>=75?3:s>=50?2:s>=25?1:0;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const fx=(n,d=0)=>Number(n).toFixed(d);
@@ -491,10 +486,7 @@ const mix=(a,b,t)=>{const A=hx(a),B=hx(b);return '#'+A.map((x,i)=>Math.round(x+(
 function applyTheme(mode,str){const T=TH[mode],t=str/100,s=document.documentElement.style;
   Object.keys(T.lo).forEach(k=>s.setProperty('--'+k,mix(T.lo[k],T.hi[k],t)));
   ['ok','drift','act','alert'].forEach((k,i)=>s.setProperty('--'+k,T.st[i]));
-  s.colorScheme=mode==='light'?'light':'dark';s.setProperty('--onacc',T.on);s.setProperty('--acc2',T.a2);s.setProperty('--glyph',T.glyph);s.setProperty('--bw',mode==='contrast'&&str>60?'2px':'1px');
-  const B=mode==='light'?TH.dark:T;['ok','drift','act','alert'].forEach((k,i)=>s.setProperty('--b'+k,B.st[i]));
-  const F={dark:['#10141d','#8d98ae','#ffffff'],light:['#0d0f15','#8d98ae','#ffffff'],contrast:['#000000','#ffffff','#ffffff'],night:['#0a0000','#b03a28','#ff3b2a']}[mode];
-  s.setProperty('--figfill',F[0]);s.setProperty('--figline',F[1]);s.setProperty('--facet',F[2])}
+  s.colorScheme=mode==='light'?'light':'dark';s.setProperty('--onacc',T.on);s.setProperty('--acc2',T.a2);s.setProperty('--glyph',T.glyph);s.setProperty('--bw',mode==='contrast'&&str>60?'2px':'1px')}
 
 /* ================= small components ================= */
 function Shape({lv,size=18}){const c=LVC[lv],g={stroke:'var(--glyph)',strokeWidth:2.6,fill:'none',strokeLinecap:'round',strokeLinejoin:'round'};
@@ -529,7 +521,7 @@ function Guide({k}){const G=GUIDE[k];return <div className="guide">
   <span className="lbl">How it works</span><p>{G.how}</p><span className="lbl">Key facts</span><ul>{G.facts.map(f=><li key={f}>{f}</li>)}</ul>
   <span className="lbl">In space</span><p>{REG[k].why}</p></div>}
 function Figure({A,sel,pick,scanKey,hl,repair}){const [hk,setHk]=useState(null);
-  const vars={'--aura':(.03+.1*repair/100).toFixed(3)};RK.forEach(k=>{vars['--c-'+k]=BV[A[k].lv]});
+  const vars={'--aura':(.03+.1*repair/100).toFixed(3)};RK.forEach(k=>{vars['--c-'+k]=LVC[A[k].lv]});
   const z=sel?ZOOM[sel]:null,zoomed=!!z&&z[2]>1;
   const cam={transform:zoomed?`translate(${(50-z[2]*z[0]/7.2).toFixed(2)}%,${(50-z[2]*z[1]/8.5).toFixed(2)}%) scale(${z[2]})`:'translate(0%,0%) scale(1)'};
   return <div className={'fig anat'+(zoomed?' zoomed':'')} style={vars} data-sel={sel||'none'} data-hov={hk||'none'} onClick={e=>{if(sel&&!e.target.closest('[data-k],button'))pick(null)}}>
@@ -537,8 +529,8 @@ function Figure({A,sel,pick,scanKey,hl,repair}){const [hk,setHk]=useState(null);
    <div className="cam" style={cam}>
    <svg viewBox="0 0 720 850" role="img" aria-label="Anatomical diagram of the selected astronaut with seven monitored body systems">
     <g dangerouslySetInnerHTML={ANAT} onMouseOver={e=>{const g=e.target.closest('[data-k]');setHk(g?g.getAttribute('data-k'):null)}} onMouseLeave={()=>setHk(null)} onClick={e=>{const g=e.target.closest('[data-k]');if(g)pick(g.getAttribute('data-k'))}}/>
-    {RK.map(k=>{const r=REG[k],x0=r.side==='L'?166:554,on=sel===k;return <g key={k} className="lead" stroke={on?'var(--acc)':'var(--mut)'} strokeWidth={on?1.4:.9} fill="none" opacity={on?1:.8}>
-      <path d={`M${x0} ${r.ly}L${r.side==='L'?x0+20:x0-20} ${r.ly}L${r.ax} ${r.ay}`}/><circle cx={r.ax} cy={r.ay} r="2.4" fill={on?'var(--acc)':'var(--mut)'} stroke="none"/></g>})}
+    {RK.map(k=>{const r=REG[k],x0=r.side==='L'?166:554,on=sel===k;return <g key={k} className="lead" stroke={on?'var(--acc)':'var(--figline)'} strokeWidth={on?1.4:.9} fill="none" opacity={on?1:.8}>
+      <path d={`M${x0} ${r.ly}L${r.side==='L'?x0+20:x0-20} ${r.ly}L${r.ax} ${r.ay}`}/><circle cx={r.ax} cy={r.ay} r="2.4" fill={on?'var(--acc)':'var(--figline)'} stroke="none"/></g>})}
    </svg>
    {RK.map(k=>{const r=REG[k],a=A[k];return <button key={k} className={`call ${r.side} ${a.lv===0?'quiet':''} ${hk===k?'on':''} ${scanKey===k?'scan':''} ${hl.includes(k)?'hl':''}`} style={{top:r.ly/850*100+'%'}} aria-pressed={sel===k} aria-label={`${r.name}: ${LV[a.lv]}`} onClick={()=>pick(k)}>
      <Shape lv={a.lv} size={20}/><span><b>{r.name}</b><small className={'c'+a.lv}>{LV[a.lv]}</small></span></button>})}
@@ -929,7 +921,7 @@ function App(){
     {sel&&<div className="card detail">
        <div className="row sp"><h2 style={{fontSize:'1.15rem',margin:0}}>{r.name}</h2><span className="row"><Badge lv={a.lv}/><button className="ghost" style={{minHeight:32,padding:"0 8px"}} aria-label="Close panel" onClick={()=>setSel(null)}>✕</button></span></div>
        <div className="meter" style={{margin:'10px 0'}}><i style={{width:a.score+'%',background:LVC[a.lv]}}/></div>
-       <div className="anat inset" data-sel={sel} style={Object.fromEntries(RK.map(k=>['--c-'+k,BV[A[k].lv]]))} role="img" aria-label={'Close-up illustration: '+r.name}>
+       <div className="anat inset" data-sel={sel} style={Object.fromEntries(RK.map(k=>['--c-'+k,LVC[A[k].lv]]))} role="img" aria-label={'Close-up illustration: '+r.name}>
         <svg viewBox={CROP[sel]} preserveAspectRatio="xMidYMid meet"><g dangerouslySetInnerHTML={ANAT}/></svg></div>
        <div className="seg" role="group" aria-label="Panel view" style={{width:'100%'}}>
         <button style={{flex:1}} aria-pressed={ptab==='status'} onClick={()=>setPtab('status')}>Status and actions</button>
