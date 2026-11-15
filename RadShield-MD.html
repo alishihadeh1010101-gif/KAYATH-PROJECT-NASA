@@ -723,7 +723,7 @@ function Camera({kind,what,facing,onClose,onSubmit}){const dlg=useDialogFocus();
   const start=async()=>{setErr('');setSnap(null);setLive(null);setSt('starting');prevG.current=null;okAt.current=0;
     try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
       /* ask for the largest picture the camera offers; the browser picks the closest mode it has */
-      let s;try{s=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:4096},height:{ideal:2160}},audio:false})}catch(e){if(e.name==='OverconstrainedError')s=await navigator.mediaDevices.getUserMedia({video:true,audio:false});else throw e}
+      let s;try{const cid=facing==='user'?load('rs_cam',''):'';s=await navigator.mediaDevices.getUserMedia({video:{...(cid?{deviceId:{exact:cid}}:{facingMode:facing}),width:{ideal:4096},height:{ideal:2160}},audio:false})}catch(e){if(e.name==='OverconstrainedError'||e.name==='NotFoundError')s=await navigator.mediaDevices.getUserMedia({video:true,audio:false});else throw e}
       if(!alive.current){s.getTracks().forEach(x=>x.stop());return}
       stream.current=s;const tr=s.getVideoTracks()[0],caps=tr.getCapabilities?tr.getCapabilities():{},adv=[];
       ['focusMode','exposureMode','whiteBalanceMode'].forEach(k=>{if(caps[k]&&caps[k].includes('continuous'))adv.push({[k]:'continuous'})});
@@ -849,15 +849,22 @@ function EyeCard({et,open,clear}){return <div><div className="row sp"><span clas
   {et?<div><p style={{margin:'8px 0 0',fontSize:'.88rem'}}>Fatigue signs: <b>{ET_LVL[et.level]}</b>. <span className="sub">Webcam estimate, not a diagnosis.</span></p><EtTiles r={et}/></div>:<p className="sub" style={{margin:'8px 0'}}>No result yet. The test watches your blinks and how well your eyes follow a dot. Video stays on this device.</p>}
   <div className="row"><button className="btn sm pri" onClick={open}>{et?'Run eye-tracking test again':'Start eye-tracking test'}</button>{et&&<button className="btn sm" onClick={clear}>Clear result</button>}</div></div>}
 function EyeTest({sim,auto,onClose,onDone}){const dlg=useDialogFocus();
-  const [st,setSt]=useState(sim?'run':'loading'),[err,setErr]=useState(''),[checks,setChecks]=useState(null),[phase,setPhase]=useState('cal'),[res,setRes]=useState(null);
+  const [st,setSt]=useState(sim?'run':'loading'),[err,setErr]=useState(''),[checks,setChecks]=useState(null),[phase,setPhase]=useState('cal'),[res,setRes]=useState(null),[cams,setCams]=useState([]),[camId,setCamId]=useState(''),[cd,setCd]=useState(0);
   const [stepsOnly,setStepsOnly]=useState(()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const vid=useRef(),stream=useRef(null),lm=useRef(null),raf=useRef(0),dot=useRef(),bar=useRef(),cv=useRef(null),lastT=useRef(-1),alive=useRef(true),so=useRef(stepsOnly);so.current=stepsOnly;
   const stop=()=>{cancelAnimationFrame(raf.current);if(stream.current){stream.current.getTracks().forEach(x=>x.stop());stream.current=null}};
-  const boot=async()=>{setErr('');setChecks(null);setSt('loading');
+  /* pick: a camera id chosen in the list. Otherwise use the remembered camera, or a plugged-in webcam ahead of the built-in one. */
+  const boot=async pick=>{stop();setErr('');setChecks(null);setCd(0);setSt('loading');
     try{if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('nocam');
-      const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}},audio:false});
+      const open=id=>navigator.mediaDevices.getUserMedia({video:{...(id?{deviceId:{exact:id}}:{facingMode:'user'}),width:{ideal:640},height:{ideal:480},frameRate:{ideal:30}},audio:false});
+      const idOf=x=>{const t=x.getVideoTracks()[0];return (t&&t.getSettings&&t.getSettings().deviceId)||''};
+      pick=typeof pick==='string'?pick:'';const want=pick||load('rs_cam','');
+      let s;try{s=await open(want)}catch(e){if(want&&(e.name==='OverconstrainedError'||e.name==='NotFoundError'))s=await open('');else throw e}
+      let list=[];try{list=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput'&&d.deviceId)}catch(e){}
+      if(!want){const ext=list.find(d=>d.label&&!/integrated|built.?in|internal|facetime|\bIR\b/i.test(d.label));
+        if(ext&&list.length>1&&ext.deviceId!==idOf(s)){try{const s2=await open(ext.deviceId);s.getTracks().forEach(x=>x.stop());s=s2;save('rs_cam',ext.deviceId)}catch(e){}}}
       if(!alive.current){s.getTracks().forEach(x=>x.stop());return}
-      stream.current=s;
+      stream.current=s;setCams(list);setCamId(idOf(s));if(pick)save('rs_cam',pick);
       try{lm.current=await window.RSVision.load()}catch(e){throw new Error('model')}
       if(alive.current)setSt('pre')}
     catch(e){stop();if(alive.current){setErr(camError(e));setSt('error')}}};
@@ -879,7 +886,9 @@ function EyeTest({sim,auto,onClose,onDone}){const dlg=useDialogFocus();
     let last=0,okAt=0;
     const loop=()=>{raf.current=requestAnimationFrame(loop);const s=sample();if(s===undefined)return;const now=performance.now(),C=precheck(s),ok=C.every(c=>c.ok);
       okAt=ok?(okAt||now):0;if(now-last>250){last=now;setChecks(C)}
-      if(auto&&ok&&now-okAt>2000)setSt('run')};
+      /* hands-free: the test starts by itself once every check has passed for 3 seconds */
+      const left=ok?Math.max(0,Math.ceil((3000-(now-okAt))/1000)):0;setCd(left);
+      if(ok&&now-okAt>(auto?2000:3000))setSt('run')};
     loop();return()=>cancelAnimationFrame(raf.current)},[st]);
   /* the test itself */
   useEffect(()=>{if(st!=='run')return;const R=window.EyeRun.run(so.current);let t0=performance.now(),ph='';
@@ -899,11 +908,12 @@ function EyeTest({sim,auto,onClose,onDone}){const dlg=useDialogFocus();
       <div className="row"><button className="btn pri" data-switch onClick={boot}>Try again</button></div></div>}
     {!sim&&(st==='pre'||st==='run')&&<video ref={vid} className={'etvid '+st} autoPlay playsInline muted aria-label="Camera preview"/>}
     {st==='pre'&&<div>
-      <p style={{margin:'10px 0 0',fontSize:'.92rem'}}>Sit facing the screen at about arm’s length. For about 30 seconds you will rest your gaze on a dot, then follow it as it moves. Video stays on this device.</p>
+      <p style={{margin:'10px 0 0',fontSize:'.92rem'}}>Sit facing the screen at about arm’s length. For about 30 seconds you will rest your gaze on a dot, then follow it as it moves, using only your eyes. Nothing to click or tap. Video stays on this device.</p>
       <ul className="checks">{(checks||[{l:'Looking for your face…'}]).map(c=><li key={c.l}>{c.ok==null?<span className="box"/>:<Shape lv={c.ok?0:3}/>}<span>{c.l}</span></li>)}</ul>
-      <p className={'note '+(fail?'al':'')} role="status" style={{margin:'0 0 12px'}}>{!checks?'Checking the picture…':fail?fail.fix:auto?'Ready. Starting automatically…':'Ready. Keep this position and start the test.'}</p>
+      <p className={'note '+(fail?'al':'')} role="status" style={{margin:'0 0 12px'}}>{!checks?'Checking the picture…':fail?fail.fix:'Ready. Hold this position. The test starts by itself'+(cd?' in '+cd+'…':'…')}</p>
+      {cams.length>1&&<label style={{display:'grid',gap:4,marginBottom:12}}><span className="lbl">Camera</span><select value={camId} onChange={e=>boot(e.target.value)}>{cams.map((c,i)=><option key={c.deviceId} value={c.deviceId}>{c.label||'Camera '+(i+1)}</option>)}</select></label>}
       <label className="chk" style={{marginBottom:12}}><input type="checkbox" checked={stepsOnly} onChange={e=>setStepsOnly(e.target.checked)}/><span>Steps only: the dot jumps between positions and never glides. On by default when your device asks for reduced motion.</span></label>
-      <button className="btn pri" data-switch disabled={!ready} onClick={()=>setSt('run')}>Start test</button></div>}
+      <button className="btn pri" data-switch disabled={!ready} onClick={()=>setSt('run')}>Start now</button></div>}
     {st==='run'&&<div>
       <div className="row sp" style={{margin:'10px 0 0'}}><b>{ET_PHASE[phase][0]}</b><span className="sub" role="status">{ET_PHASE[phase][1]}</span></div>
       <div className="etstage"><i ref={dot} className="etdot" style={{left:'50%'}}/></div>
