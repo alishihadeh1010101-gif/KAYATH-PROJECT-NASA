@@ -361,13 +361,18 @@ window.EyeRun=(function(){
     OFF_X:.2,OFF_Y:.25,// pre-check: how far the face centre may sit from the frame centre. Tuning values.
     DARK:55            // pre-check: mean face brightness (0..255) below which lighting is "too dim". Tuning value.
   };
-  const JUMPS=[-1,1,-.4,.9,-.9,.3,1,-.6,.6,-1,.5,-.8,.8,0];
-  /* about 30 s: 3 calibration points, 12 s rest gaze, then either 8 s smooth + 6 jumps, or 14 jumps when smooth motion is turned off */
-  function plan(stepsOnly){const S=[],add=(name,dur,x)=>{const t0=S.length?S[S.length-1].t1:0;S.push({name,t0,t1:t0+dur,x})};
-    [0,-1,1].forEach(x=>add('cal',1500,x));add('rest',12000,0);if(!stepsOnly)add('smooth',8000,null);
-    JUMPS.slice(0,stepsOnly?14:6).forEach(x=>add('jump',1000,x));return S}
+  const JUMP_MIN=.5;   // smallest jump, as a share of half the dot's travel. Shorter jumps are not timed by analyse(), so every random jump is at least this long.
+  /* dot position inside one step of the plan. A smooth step glides on a sine with its own direction and period. */
+  const xAt=(s,t)=>s.x==null?s.dir*Math.sin(Math.max(0,t-s.t0)/s.per*2*Math.PI):s.x;
+  /* about 30 s: 3 calibration points, 12 s rest gaze, then either 8 s smooth + 6 jumps, or 14 jumps when smooth motion is turned off.
+     The dot's path is drawn afresh for every run, so it cannot be learned: the glide gets a random direction and speed, and each jump lands on a random spot. Calibration and rest stay fixed because the analysis depends on them. */
+  function plan(stepsOnly){const S=[],add=(name,dur,x,o)=>{const t0=S.length?S[S.length-1].t1:0;S.push(Object.assign({name,t0,t1:t0+dur,x},o))};
+    [0,-1,1].forEach(x=>add('cal',1500,x));add('rest',12000,0);
+    if(!stepsOnly)add('smooth',8000,null,{dir:Math.random()<.5?-1:1,per:3400+Math.random()*1600});
+    for(let i=0,n=stepsOnly?14:6;i<n;i++){const L=S[S.length-1],px=xAt(L,L.t1);let x;do{x=Math.round((Math.random()*2-1)*10)/10}while(Math.abs(x-px)<JUMP_MIN);add('jump',1000,x)}
+    return S}
   function run(stepsOnly){const S=plan(stepsOnly),total=S[S.length-1].t1,N=[];
-    const at=t=>{const s=S.find(s=>t<s.t1)||S[S.length-1];return {name:s.name,x:s.x==null?Math.sin(Math.max(0,t-s.t0)/4000*2*Math.PI):s.x}};
+    const at=t=>{const s=S.find(s=>t<s.t1)||S[S.length-1];return {name:s.name,x:xAt(s,t)}};
     return {S,total,at,push:(t,s)=>N.push({t,c:s?s.closed:null,g:s?s.gaze:null}),finish:()=>analyse(S,N,at,!!stepsOnly)}}
   const med=a=>{const b=a.slice().sort((x,y)=>x-y);return b[b.length>>1]};
   function analyse(S,N,at,stepsOnly){
@@ -384,7 +389,7 @@ window.EyeRun=(function(){
     const gC=cal[0],gL=cal[1],gR=cal[2],gazeOK=cal.every(g=>g!=null)&&Math.abs(gR-gL)>=K.GAZE_RANGE_MIN&&(gR-gC)*(gC-gL)>0;
     let lag=null,err=null;
     if(gazeOK){const X=g=>{const d=g-gC;return Math.max(-1.6,Math.min(1.6,d*(gR-gC)>0?d/(gR-gC):-d/(gL-gC)))};
-      const lats=[];S.forEach((s,i)=>{if(s.name!=='jump')return;const px=S[i-1].x==null?0:S[i-1].x,d=s.x-px;if(Math.abs(d)<.5)return;
+      const lats=[];S.forEach((s,i)=>{if(s.name!=='jump')return;const px=xAt(S[i-1],S[i-1].t1),d=s.x-px;if(Math.abs(d)<.5)return;
         const mid=px+d/2,P=open.filter(n=>n.t>=s.t0&&n.t<s.t1);
         for(let j=0;j<P.length-1;j++)if((X(P[j].g)-mid)*d>0&&(X(P[j+1].g)-mid)*d>0){const l=P[j].t-s.t0;if(l>=80&&l<=900)lats.push(l);break}});
       const sm=S.find(s=>s.name==='smooth');let smLag=null;
