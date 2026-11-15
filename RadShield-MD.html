@@ -184,6 +184,7 @@ pre{background:var(--panel2);border:var(--bw) solid var(--line);border-radius:6p
 .etvid.pre{width:100%;max-height:38vh;object-fit:contain}
 .etvid.run{position:absolute;right:16px;bottom:16px;width:7rem;height:5.25rem;opacity:.85;z-index:1}
 .modal>.card{position:relative}
+.modal>.card:focus{outline:none}
 .etstage{position:relative;height:13rem;margin:10px 0;border:var(--bw) dashed var(--line);border-radius:6px;background:var(--panel2);overflow:hidden}
 .etdot{position:absolute;top:50%;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;background:var(--acc);border:3px solid var(--text)}
 .etdot::after{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--onacc)}
@@ -668,7 +669,7 @@ function ReactionTest({onDone}){
     tick.current=setInterval(()=>{setLeft(Math.max(0,Math.ceil((end.current-performance.now())/1000)));
       if(performance.now()>=end.current){clearInterval(tick.current);setSt('done');setPos(null);const n=tm.current.length,a=n?Math.round(tm.current.reduce((x,y)=>x+y,0)/n):null;setRes({a,n});if(a)onDone(a)}},200)};
   useEffect(()=>()=>clearInterval(tick.current),[]);
-  return <div><div className="row sp"><span className="lbl">10-second reaction test</span><span className="chip mono">{st==='run'?left+' s':'tap each target'}</span></div>
+  return <div><div className="row sp"><span className="lbl">10-second reaction test</span><span className="chip">{st==='run'?left+' s':'tap targets'}</span></div>
    <div ref={box} style={{position:'relative',height:160,border:'var(--bw) dashed var(--line)',borderRadius:6,marginTop:8,background:'var(--panel2)',overflow:'hidden',display:'grid',placeItems:'center'}}>
     {st!=='run'&&<div style={{textAlign:'center'}}>{res&&<div className="mono" style={{fontSize:'1.4rem',marginBottom:6}}>{res.a??'no taps'}{res.a?' ms':''}<span className="sub"> · {res.n} taps</span></div>}<button className="btn pri" onClick={start}>{st==='done'?'Run again':'Start test'}</button></div>}
     {st==='run'&&pos&&<button className="target" aria-label="Target" style={{left:pos.x,top:pos.y}} onPointerDown={()=>{tm.current.push(Math.round(performance.now()-t0.current));spawn()}}/>}
@@ -714,7 +715,7 @@ function photoROI(kind,vw,vh,face){
     return {roi:fit(e.cx,e.cy,e.w*2,e.w*2/1.5),eyePx:e.w}}
   const w=vw*.42;return {roi:fit(vw/2,vh/2,w,w/1.5)}}
 /* live camera: framing overlay and quality checks, burst capture (sharpest frame kept), crop, confirm, then submit */
-function Camera({kind,what,facing,onClose,onSubmit}){
+function Camera({kind,what,facing,onClose,onSubmit}){const dlg=useDialogFocus();
   const vid=useRef(),stream=useRef(null),lm=useRef(null),cv=useRef(document.createElement('canvas')),roiRef=useRef(null),prevG=useRef(null),okAt=useRef(0),alive=useRef(true),busy=useRef(false);
   const [st,setSt]=useState('starting'),[snap,setSnap]=useState(null),[err,setErr]=useState(''),[live,setLive]=useState(null),[auto,setAuto]=useState(true),[torch,setTorch]=useState(null),[eyeAI,setEyeAI]=useState(kind==='eyes'?'loading':'none');
   const autoRef=useRef(auto);autoRef.current=auto;
@@ -764,7 +765,7 @@ function Camera({kind,what,facing,onClose,onSubmit}){
   const hole=r&&(kind==='eyes'?`M${r.x} ${r.y+r.h/2}a${r.w/2} ${r.h/2} 0 1 0 ${r.w} 0a${r.w/2} ${r.h/2} 0 1 0 ${-r.w} 0Z`:`M${r.x} ${r.y}h${r.w}v${r.h}h${-r.w}Z`);
   const tips=what==='eye'?'Face the camera in good light with one eye near the centre. The photo is cropped to that eye.':'Hold the area of skin inside the square, in good light.';
   /* rendered at the page root: the detail panel is a sticky scroller, so a dialog left inside it would sit under the figure controls and top bar */
-  return ReactDOM.createPortal(<div className="modal" role="dialog" aria-modal="true" aria-label={`Take ${what} photo`}><div className="card" style={{width:'min(720px,100%)'}}>
+  return ReactDOM.createPortal(<div className="modal" role="dialog" aria-modal="true" aria-label={`Take ${what} photo`}><div className="card" ref={dlg} tabIndex={-1} style={{width:'min(720px,100%)'}}>
     <div className="row sp" style={{marginBottom:10}}><span className="lbl">{what} photo · {st==='review'?'step 2 of 2: confirm':'step 1 of 2: capture'}</span><button className="btn sm" onClick={()=>{stop();onClose()}}>Cancel</button></div>
     {st==='starting'&&<p className="sub" role="status">Starting the camera. If the browser asks, choose Allow.</p>}
     {st==='error'&&<div><p className="note al" role="alert">{err}</p><div className="row" style={{marginTop:12}}><button className="btn pri" data-switch onClick={start}>Try again</button></div></div>}
@@ -823,6 +824,13 @@ function ShelterMap({loc,setLoc,storm}){return <svg viewBox="0 0 380 170" width=
     {safe&&<text x={m.x+m.w/2} y={m.y+m.h+16} textAnchor="middle" fontSize="10" fill="var(--ok)" fontWeight="700" letterSpacing="1">SAFEST ZONE</text>}
   </g>})}</svg>}
 
+/* dialogs: move keyboard focus in, keep Tab inside, and hand focus back on close */
+function useDialogFocus(){const ref=useRef();
+  useEffect(()=>{const was=document.activeElement,el=ref.current;if(el)el.focus();
+    const h=e=>{if(e.key!=='Tab'||!el)return;const F=[...el.querySelectorAll('button,input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(x=>!x.disabled&&x.offsetParent);if(!F.length){e.preventDefault();return}
+      const a=F[0],z=F[F.length-1];if(!el.contains(document.activeElement)||(e.shiftKey&&document.activeElement===a)){e.preventDefault();(e.shiftKey?z:a).focus()}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}};
+    window.addEventListener('keydown',h);return()=>{window.removeEventListener('keydown',h);if(was&&was.focus)was.focus()}},[]);
+  return ref}
 /* ================= eye-tracking fatigue test ================= */
 const ETK=window.EyeRun.K;
 const ET_PHASE={cal:['Calibrating','Look at the dot each time it moves. Keep your head still.'],rest:['Rest gaze','Rest your eyes on the dot and blink normally.'],smooth:['Follow the dot','Follow the dot with your eyes only. Keep your head still.'],jump:['Follow the dot','Look at the dot as soon as it jumps.']};
@@ -837,10 +845,10 @@ function EtTiles({r}){return <div className="tiles">{window.EyeRun.metrics(r).ma
   <b className="mono">{m.v==null?'–':m.v}{m.v!=null&&<small> {m.u}</small>}</b>
   {m.v==null?<span className="sub">not measured</span>:<span className="row" style={{gap:6}}><span className={'badge c'+m.lv}><Shape lv={m.lv} size={14}/>{m.txt.toUpperCase()}</span><span className="chip">estimate</span></span>}</div>)}</div>}
 /* launcher shown in the Mind panel */
-function EyeCard({et,open,clear}){return <div><div className="row sp"><span className="lbl">30-second eye-tracking test</span><span className="chip">webcam · stays on this device</span></div>
-  {et?<div><p style={{margin:'8px 0 0',fontSize:'.88rem'}}>Fatigue signs: <b>{ET_LVL[et.level]}</b>.</p><EtTiles r={et}/></div>:<p className="sub" style={{margin:'8px 0'}}>No result yet. The test watches your blinks and how well your eyes follow a dot.</p>}
+function EyeCard({et,open,clear}){return <div><div className="row sp"><span className="lbl">30-second eye-tracking test</span><span className="chip">webcam</span></div>
+  {et?<div><p style={{margin:'8px 0 0',fontSize:'.88rem'}}>Fatigue signs: <b>{ET_LVL[et.level]}</b>. <span className="sub">Webcam estimate, not a diagnosis.</span></p><EtTiles r={et}/></div>:<p className="sub" style={{margin:'8px 0'}}>No result yet. The test watches your blinks and how well your eyes follow a dot. Video stays on this device.</p>}
   <div className="row"><button className="btn sm pri" onClick={open}>{et?'Run eye-tracking test again':'Start eye-tracking test'}</button>{et&&<button className="btn sm" onClick={clear}>Clear result</button>}</div></div>}
-function EyeTest({sim,auto,onClose,onDone}){
+function EyeTest({sim,auto,onClose,onDone}){const dlg=useDialogFocus();
   const [st,setSt]=useState(sim?'run':'loading'),[err,setErr]=useState(''),[checks,setChecks]=useState(null),[phase,setPhase]=useState('cal'),[res,setRes]=useState(null);
   const [stepsOnly,setStepsOnly]=useState(()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const vid=useRef(),stream=useRef(null),lm=useRef(null),raf=useRef(0),dot=useRef(),bar=useRef(),cv=useRef(null),lastT=useRef(-1),alive=useRef(true),so=useRef(stepsOnly);so.current=stepsOnly;
@@ -884,7 +892,7 @@ function EyeTest({sim,auto,onClose,onDone}){
     loop();return()=>cancelAnimationFrame(raf.current)},[st]);
   const fail=checks&&checks.find(c=>c.ok===false),ready=!!checks&&!fail;
   const head={loading:'starting',error:'camera problem',pre:'step 1 of 3: position',run:'step 2 of 3: test',done:'step 3 of 3: result',bad:'no result'}[st];
-  return <div className="modal" role="dialog" aria-modal="true" aria-label="Eye-tracking fatigue test"><div className="card big">
+  return <div className="modal" role="dialog" aria-modal="true" aria-label="Eye-tracking fatigue test"><div className="card big" ref={dlg} tabIndex={-1}>
     <div className="row sp" style={{marginBottom:10}}><span className="lbl">Eye-tracking fatigue test · {head}</span><button className="btn sm" onClick={onClose}>Close</button></div>
     {st==='loading'&&<p className="sub" role="status">Starting the camera and loading the eye tracker (about 18 MB the first time). If the browser asks, choose Allow.</p>}
     {st==='error'&&<div><p className="note al" role="alert">{err}</p><p className="sub">The tap reaction test in the Mind panel works without the camera.</p>
@@ -1232,10 +1240,10 @@ function App(){
          <span className="lbl">Storm-shelter pathfinder · select a module to move</span>
          <ShelterMap loc={loc} setLoc={setLoc} storm={eff>=5}/>
          <hr/><PhotoCheck kind="skin" val={photo.skin} set={x=>setPhotos(s=>({...s,[crewId]:{...photo,skin:x}}))}/>
-         <hr/><div className="row sp"><span className="lbl">Space weather</span><span className="chip mono" style={{borderColor:wx.mode==='live'?'var(--ok)':'var(--drift)'}}>{wx.mode==='live'?'LIVE NASA DONKI':'SIMULATED TELEMETRY (DONKI STANDBY)'}</span></div>
+         <hr/><div className="row sp"><span className="lbl">Space weather</span><span className="chip" style={{borderColor:wx.mode==='live'?'var(--ok)':'var(--drift)'}}>{wx.mode==='live'?'live NASA DONKI':'simulated telemetry'}</span></div>
          <p className="sub" style={{margin:'6px 0'}}>{wx.msg}</p>
          <ul className="mono" style={{margin:'0 0 8px',paddingLeft:18,fontSize:'.8rem'}}>{wx.events.map((e,i)=><li key={i}>{e.t?e.t.slice(0,10)+' · ':''}{e.l}</li>)}</ul>
-         <button className="btn sm" onClick={fetchWx} disabled={wx.loading}>{wx.loading?'Fetching…':'Fetch Live NASA DONKI'}</button></div>}
+         <button className="btn sm" onClick={fetchWx} disabled={wx.loading}>{wx.loading?'Fetching…':'Fetch live NASA DONKI data'}</button></div>}
 
        {r.fields.length>0&&<div><hr/><span className="lbl">Self-check · move a slider to test</span>{r.fields.map(k=><Field key={k} k={k} v={v} set={set}/>)}</div>}
        {sel==='mind'&&<div><hr/><ReactionTest onDone={ms=>{set('rt',ms);toast('Reaction time '+ms+' ms recorded.')}}/><hr/><EyeCard et={v.et} open={()=>setEtOpen({sim:null})} clear={()=>set('et',null)}/></div>}
