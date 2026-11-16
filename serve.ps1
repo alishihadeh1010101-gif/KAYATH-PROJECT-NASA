@@ -5,14 +5,14 @@ $url = 'http://localhost:8765/'
 $types = @{ '.html' = 'text/html; charset=utf-8'; '.js' = 'text/javascript'; '.mjs' = 'text/javascript'; '.css' = 'text/css'; '.json' = 'application/json'; '.png' = 'image/png'; '.svg' = 'image/svg+xml' }
 $listener = New-Object Net.HttpListener
 $listener.Prefixes.Add($url)
-try { $listener.Start() } catch { Write-Host "RadShield-MD is already running at $url"; Start-Process ($url + 'RadShield-MD.html'); exit }
-Write-Host "RadShield-MD running at ${url}RadShield-MD.html  (close this window to stop)"
-if (-not $env:RADSHIELD_NOOPEN) { Start-Process ($url + 'RadShield-MD.html') }
+try { $listener.Start() } catch { Write-Host "BioDeck-MD is already running at $url"; Start-Process ($url + 'BioDeck-MD.html'); exit }
+Write-Host "BioDeck-MD running at ${url}BioDeck-MD.html  (close this window to stop)"
+if (-not $env:BIODECK_NOOPEN) { Start-Process ($url + 'BioDeck-MD.html') }
 while ($listener.IsListening) {
   $ctx = $listener.GetContext()
   try {
     $rel = [Uri]::UnescapeDataString($ctx.Request.Url.AbsolutePath.TrimStart('/'))
-    if (-not $rel) { $rel = 'RadShield-MD.html' }
+    if (-not $rel) { $rel = 'BioDeck-MD.html' }
     $path = [IO.Path]::GetFullPath((Join-Path $root $rel))
     if ($path.StartsWith($root, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path $path -PathType Leaf)) {
       $bytes = [IO.File]::ReadAllBytes($path)

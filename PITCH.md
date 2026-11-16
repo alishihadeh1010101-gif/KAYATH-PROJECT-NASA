@@ -1,9 +1,9 @@
-# RadShield-MD: 3-minute pitch
+# BioDeck-MD: 3-minute pitch
 
 Team: Kayath Brothers · NASA Space Apps Challenge: "Create Health Monitoring Software for Astronauts on Space Missions"
 Repo: https://github.com/alishihadeh1010101-gif/KAYATH-PROJECT-NASA
 
-One line: **RadShield-MD is a space doctor in a box: it tells a crew what is wrong, why, and the three things to do now, even when Earth is 40 minutes away.**
+One line: **BioDeck-MD is a space doctor in a box: it tells a crew what is wrong, why, and the three things to do now, even when Earth is 40 minutes away.**
 
 ---
 
@@ -19,7 +19,7 @@ One line: **RadShield-MD is a space doctor in a box: it tells a crew what is wro
 - Why now: Moon and Mars missions are being planned, so crews must be able to look after themselves.
 
 **[0:45-1:15] SOLUTION (slide 3)**
-"We built RadShield-MD, a health awareness console that watches seven body systems: mind, eyes, heart, immune, gut, bones and radiation. Each one shows OK, Drift, Act or Alert, with a shape as well as a colour, so it works for colour-blind crew and for a tired crew.
+"We built BioDeck-MD, a health awareness console that watches seven body systems: mind, eyes, heart, immune, gut, bones and radiation. Each one shows OK, Drift, Act or Alert, with a shape as well as a colour, so it works for colour-blind crew and for a tired crew.
 Our key idea: **every status is explained by the symptoms behind it, and every alert comes with exactly three actions.** It is an awareness tool, not a diagnosis tool."
 (Architecture slide, 4 boxes: inputs [sliders, check-in, camera, voice] → model [symptoms → drivers → status] → outputs [alert, actions, workout, surgeon report] → NASA DONKI space-weather feed.)
 
@@ -40,7 +40,7 @@ Our key idea: **every status is explained by the symptoms behind it, and every a
 ---
 
 ## Slides (6)
-1. Hook line + RadShield-MD + team
+1. Hook line + BioDeck-MD + team
 2. Problem: who / how bad / why unsolved (3 numbers only)
 3. Solution + 4-box architecture
 4. LIVE DEMO (switch to the app)
@@ -48,9 +48,9 @@ Our key idea: **every status is explained by the symptoms behind it, and every a
 6. Ask + GitHub link + QR code
 
 ## Demo setup (do this before going on)
-- Start with `Start-RadShield.bat` and keep its window open (the mic and camera need localhost).
+- Start with `Start-BioDeck.bat` and keep its window open (the mic and camera need localhost).
 - Turn Voice commands on and click Allow once. Pick the assistant voice you like.
-- Load the starting state: `http://localhost:8765/RadShield-MD.html` (Mars Transit, day 14, all OK).
+- Load the starting state: `http://localhost:8765/BioDeck-MD.html` (Mars Transit, day 14, all OK).
 - Backup if voice fails: click "Simulate X-class solar flare" yourself. Backup if the app fails: play the video.
 - Do not demo the camera photo or the reaction test in 75 seconds. Mention them in Q&A.
 - Practise the flow 5 times with a timer.

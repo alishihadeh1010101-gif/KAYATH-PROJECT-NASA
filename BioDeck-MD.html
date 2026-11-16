@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RadShield-MD</title>
+<title>BioDeck</title>
 <style>
 :root{--bg:#040b1c;--panel:#0a1630;--panel2:#10203f;--line:#213a66;--text:#f2f5fb;--mut:#93a7c8;--acc:#5b9bff;--acc2:#fc3d21;--onacc:#04122b;
   --ok:#34d399;--drift:#facc15;--act:#fb923c;--alert:#f87171;--glyph:#04121a;--bw:1px}
@@ -144,7 +144,6 @@ input[type=number],input[type=text],input[type=date],select,textarea{width:100%;
 .meter i{display:block;height:100%}
 .chk{display:flex;gap:10px;align-items:flex-start;padding:9px 10px;border:var(--bw) solid var(--line);border-radius:6px;margin:6px 0;background:var(--panel2);cursor:pointer;min-height:44px;font-size:.88rem}
 .chk input{width:18px;height:18px;accent-color:var(--acc);margin-top:2px;flex:none}
-.chk.done{color:var(--mut);text-decoration:line-through}
 .note{border-left:3px solid var(--act);background:var(--panel2);padding:10px 12px;border-radius:0 6px 6px 0;font-size:.88rem}
 .note.al{border-left-color:var(--alert)}
 hr{border:0;border-top:var(--bw) solid var(--line);margin:14px 0}
@@ -175,9 +174,141 @@ pre{background:var(--panel2);border:var(--bw) solid var(--line);border-radius:6p
 .steps i.on{background:var(--acc)}
 .toasts{position:fixed;right:16px;bottom:16px;display:grid;gap:8px;z-index:70;max-width:min(380px,90vw)}
 .toast{background:var(--panel);border:var(--bw) solid var(--acc);border-left-width:4px;border-radius:6px;padding:12px 14px;font-size:.9rem;box-shadow:0 8px 30px rgba(0,0,0,.4)}
-.target{position:absolute;width:52px;height:52px;border-radius:50%;background:var(--acc);border:3px solid var(--text)}
+/* fitness */
+.fit-s h2{font-size:1.35rem;margin:2px 0 0}
+.fit-prog{text-align:right;line-height:1.1}.fit-prog b{display:block;font-size:1.35rem}
+.fit-tag{display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--panel2);border:var(--bw) solid var(--line);color:var(--mut)}
+.fit-tag.c0{color:var(--ok)}.fit-tag.c1{color:var(--drift)}.fit-tag.c2{color:var(--act)}.fit-tag.c3{color:var(--alert)}
+.fit-blocks{list-style:none;padding:0;margin:14px 0;display:grid;gap:8px}
+.fit-b{border:var(--bw) solid var(--line);border-radius:10px;background:var(--panel2);overflow:hidden}
+.fit-b.open{border-color:var(--acc)}
+.fit-bh{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:none;border:0;color:inherit;text-align:left;min-height:56px;cursor:pointer}
+.fit-n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:.8rem;font-weight:700;border:var(--bw) solid var(--line);background:var(--panel)}
+.fit-b.open .fit-n{border-color:var(--acc);color:var(--acc)}
+.fit-b.done .fit-n{background:var(--ok);border-color:var(--ok);color:var(--onacc)}
+.fit-b.done:not(.open) .fit-bt b{color:var(--mut)}
+.fit-bt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fit-chev{flex:none;color:var(--mut);transition:transform .2s}.fit-b.open .fit-chev{transform:rotate(180deg)}
+.fit-bb{padding:0 14px 14px 54px}
+.fit-why{margin:0 0 8px;font-size:.82rem;color:var(--mut);line-height:1.45}
+.fit-ex{position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px;margin-top:6px;border-radius:8px;background:var(--panel);cursor:pointer;min-height:48px;border:var(--bw) solid transparent}
+.fit-ex:hover{border-color:var(--line)}
+.fit-ex input{position:absolute;opacity:0;width:1px;height:1px}
+.fit-ex:focus-within{outline:2px solid var(--acc);outline-offset:1px}
+.fit-box{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;color:transparent}
+.fit-ex.on .fit-box{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
+.fit-nm{flex:1;font-size:.9rem}.fit-ex.on .fit-nm{color:var(--mut);text-decoration:line-through}
+.fit-ex .mono{text-align:right;font-size:.8rem}
+.fit-g .meter{height:8px;border-radius:4px}
+.fit-link{background:none;border:0;color:var(--acc);font-size:.78rem;font-weight:600;padding:4px 0;cursor:pointer;flex:none}
+@media(max-width:620px){.fit-bb{padding-left:14px}}
+@media(prefers-reduced-motion:reduce){.fit-chev{transition:none}}
+.fit-hero{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:20px;background:linear-gradient(120deg,var(--panel2),var(--panel))}
+.fit-rank{position:relative;width:56px;height:56px;flex:none}.fit-rank b{position:absolute;inset:0;display:grid;place-items:center;font-size:1.1rem;color:var(--acc)}
+.fit-lv{flex:1 1 220px;display:flex;flex-direction:column;gap:4px;min-width:0}.fit-rn{font-size:1.3rem}
+.fit-xpbar{height:10px;border-radius:5px;background:var(--bg);border:var(--bw) solid var(--line);overflow:hidden}
+.fit-xpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--ok));border-radius:5px}
+.fit-kpis{display:flex;gap:8px;flex-wrap:wrap}
+.fit-kpi{display:grid;grid-template-columns:auto auto;column-gap:6px;align-items:center;padding:8px 12px;border-radius:10px;background:var(--panel);border:var(--bw) solid var(--line);min-width:96px}
+.fit-kpi>span:first-child{grid-row:span 2;font-size:1.3rem}.fit-kpi b{font-size:1.15rem;line-height:1}.fit-kpi .sub{font-size:.7rem}
+.fit-kpi.hot{border-color:var(--act)}
+.fit-xp{font-size:.68rem;font-weight:700;color:var(--acc);opacity:.7;flex:none}.fit-ex.on .fit-xp{opacity:1;color:var(--ok)}
+.fit-badges ul{list-style:none;padding:0;margin:10px 0 0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.fit-badges li{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;padding:10px;border-radius:10px;background:var(--panel2);border:var(--bw) dashed var(--line);opacity:.55}
+.fit-badges li.got{opacity:1;border-style:solid;border-color:var(--acc)}
+.fit-bi{grid-row:span 2;font-size:1.5rem;filter:grayscale(1)}.fit-badges li.got .fit-bi{filter:none}
+.fit-badges b{font-size:.82rem}.fit-badges .sub{font-size:.7rem;line-height:1.3}
+@media(prefers-reduced-motion:no-preference){.fit-xpbar i{animation:xpfill .9s ease-out}.fit-rank{animation:rankpop .6s ease-out}}
+@keyframes xpfill{from{filter:brightness(1.8)}to{filter:none}}
+@keyframes rankpop{0%{transform:scale(.6)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
+.fit-me{margin:4px 0 2px;padding:14px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 14%,var(--panel2)),var(--panel2));border:var(--bw) solid color-mix(in srgb,var(--acc) 45%,var(--line))}
+.fit-me.std{background:var(--panel2);border-color:var(--line)}
+.fit-me-h{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:1rem;color:var(--acc)}.fit-me.std .fit-me-h{color:var(--ok)}
+.fit-me ul{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+.fit-me li button{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:10px 12px;border-radius:10px;cursor:pointer;color:inherit;
+ background:color-mix(in srgb,var(--mc) 14%,var(--panel));border:var(--bw) solid color-mix(in srgb,var(--mc) 50%,var(--line));border-left:5px solid var(--mc)}
+.fit-me li button:hover{background:color-mix(in srgb,var(--mc) 22%,var(--panel))}
+.fit-me-i{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--mc);color:var(--onacc)}
+.fit-me-t{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.fit-me-t b{font-size:.9rem}.fit-me-t>span{font-size:.84rem}
+.fit-me-lv{color:var(--mc);font-weight:700;font-size:.78rem;letter-spacing:.06em}
+.fit-me-b{flex:none;font-size:.72rem;text-align:right;max-width:9rem}
+.fit-b.mine{border-left:5px solid var(--mc)}
+.fit-b.mine .fit-n{border-color:var(--mc);color:var(--mc)}.fit-b.mine.done .fit-n{color:var(--onacc)}
+.fit-for{display:flex;flex-wrap:wrap;gap:4px;margin:2px 0}
+.fit-for span{font-size:.7rem;font-weight:700;padding:1px 8px;border-radius:999px;color:var(--mc);background:color-mix(in srgb,var(--mc) 16%,transparent);border:var(--bw) solid color-mix(in srgb,var(--mc) 45%,transparent)}
+.fit-why.mine{padding:8px 10px;border-radius:8px;color:var(--text);background:color-mix(in srgb,var(--mc) 12%,var(--panel));border-left:3px solid var(--mc)}
+@media(max-width:620px){.fit-me-b{display:none}}
+/* intro */
+.intro{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;overflow:hidden;cursor:pointer;color:var(--text);
+ background:radial-gradient(ellipse at 50% 45%,color-mix(in srgb,var(--acc) 22%,var(--bg)) 0%,var(--bg) 55%,#000 100%)}
+.intro-stars{position:absolute;left:50%;top:50%;width:1px;height:1px;border-radius:50%}
+.intro-core{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 16px}
+.intro-orbits{width:min(340px,70vw);height:auto;overflow:visible}
+.intro-orbits ellipse{fill:none;stroke:var(--acc);stroke-opacity:.35;stroke-width:1.2;stroke-dasharray:3 6}
+.intro-orbits .o1,.intro-orbits .o2,.intro-orbits .o3{transform-origin:200px 200px}
+.intro-orbits .pl.a{fill:var(--acc)}.intro-orbits .pl.b{fill:var(--ok)}.intro-orbits .pl.c{fill:var(--acc2)}
+.intro-orbits .disc{fill:color-mix(in srgb,var(--acc) 14%,transparent);stroke:var(--acc);stroke-width:2}
+.intro-orbits .pulse{fill:none;stroke:var(--ok);stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:260;stroke-dashoffset:0}
+.intro-t{margin:18px 0 6px;font-size:clamp(2.2rem,8vw,4.2rem);letter-spacing:.32em;font-weight:800;padding-left:.32em}
+.intro-t span{display:inline-block}
+.intro-s{margin:0;color:var(--mut);font-size:clamp(.85rem,2.4vw,1rem);letter-spacing:.06em}
+.intro-go{position:absolute;bottom:clamp(28px,8vh,72px);left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding:0 16px}
+.intro-go .btn{min-width:200px;border-radius:999px;font-size:1rem}
+.intro-bar{width:160px;height:3px;border-radius:2px;background:color-mix(in srgb,var(--text) 15%,transparent);overflow:hidden}
+.intro-bar i{display:block;height:100%;width:100%;background:var(--acc);transform-origin:left}
+@media(prefers-reduced-motion:no-preference){
+ .intro-stars.l0{animation:drift 60s linear infinite}.intro-stars.l1{animation:drift 38s linear infinite reverse}.intro-stars.l2{animation:drift 24s linear infinite}
+ .intro-orbits .o1{animation:spin 24s linear infinite}.intro-orbits .o2{animation:spin 16s linear infinite reverse}.intro-orbits .o3{animation:spin 10s linear infinite}
+ .intro-orbits{animation:zoomin 1.4s cubic-bezier(.2,.8,.2,1) both}
+ .intro-orbits .pulse{stroke-dashoffset:260;animation:draw 1.6s .6s ease-out forwards,beat 1.6s 2.4s ease-in-out infinite}
+ .intro-t span{animation:rise .7s cubic-bezier(.2,.8,.2,1) both}
+ .intro-s{animation:fadein .8s 1.3s both}.intro-go{animation:fadein .8s 1.7s both}
+ .intro-bar i{animation:fill 5.2s linear both}
+ .intro.out{animation:fadeout .6s .1s ease-in forwards;pointer-events:none}
+ .intro.out .intro-core{animation:warp .65s cubic-bezier(.6,0,.9,.4) forwards}
+ .intro.out .intro-stars{animation:starwarp .65s cubic-bezier(.6,0,.9,.4) forwards}
+ .intro.out .intro-go{animation:fadeout .25s forwards}
+ .app.entering{animation:appin .85s cubic-bezier(.16,1,.3,1) both}
+ .app.entering .side{animation:slidein .85s .05s cubic-bezier(.16,1,.3,1) both}
+ .app.entering .main{animation:shiftup .85s .12s cubic-bezier(.16,1,.3,1) both}}
+@media(prefers-reduced-motion:reduce){.intro.out{opacity:0;transition:opacity .15s}}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(-120px,40px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes zoomin{from{transform:scale(.4) rotate(-40deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes beat{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes rise{from{transform:translateY(24px) scale(.9);opacity:0;filter:blur(8px)}to{transform:none;opacity:1;filter:none}}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fadeout{to{opacity:0}}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes warp{to{transform:scale(7);opacity:0;filter:blur(6px)}}
+@keyframes starwarp{to{transform:scale(4);opacity:0}}
+@keyframes appin{from{transform:scale(.9);opacity:0;filter:blur(10px)}to{transform:none;opacity:1;filter:none}}
+@keyframes slidein{from{transform:translateX(-40px);opacity:0}to{transform:none;opacity:1}}
+@keyframes shiftup{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+/* surgeon report */
+.rep{display:grid;gap:14px;max-width:1100px}.rep>.card{margin:0}.rep .card+.card{margin-top:0}
+.rep-head h2{font-size:1.5rem;margin:4px 0 0}
+.rep-sum{display:flex;gap:14px;align-items:center;margin-top:16px;padding:14px 16px;border-radius:10px;background:var(--panel2);border:var(--bw) solid var(--line);border-left:4px solid var(--ok)}
+.rep-sum.c1{border-left-color:var(--drift)}.rep-sum.c2{border-left-color:var(--act)}.rep-sum.c3{border-left-color:var(--alert)}
+.rep-sum b{font-size:1.05rem}
+.rep-note{margin:10px 0 0;font-size:.76rem}
+.rep-sys{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.rep-tile{padding:12px 14px;border-radius:10px;background:var(--panel2);border:var(--bw) solid var(--line)}
+.rep-tile.on{border-left:4px solid var(--lc)}
+.rep-two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}.rep-two>.card{margin:0}
+.rep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:6px 0 14px}
+.rep-grid:last-child{margin-bottom:0}
+.rep-st{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:8px;background:var(--panel2)}
+.rep-st .sub{font-size:.74rem}.rep-st b{font-size:1.1rem}.rep-st small{font-size:.72rem;color:var(--mut);font-weight:400}
+.rep-st.big{background:none;padding:0}.rep-st.big b{font-size:1.6rem}
+.rep-raw{display:flex;justify-content:space-between;align-items:center;width:100%;background:none;border:0;color:inherit;text-align:left;padding:0;min-height:36px;cursor:pointer}
+@media print{.top,.side,.scrim,.toasts,.rep-act{display:none!important}.app{display:block}.main{padding:0}.rep{max-width:none}.rep .card{break-inside:avoid}}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
 .cols>.card{margin:0}
+.chart{touch-action:pan-y;cursor:crosshair;border-radius:6px}
+.chart .read{display:flex;flex-wrap:wrap;gap:2px 12px;align-items:center;min-height:2.7em;font-size:.76rem;margin-bottom:2px}
+.chart .read i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
 .modal>.card.big{width:min(980px,100%)}
 /* eye-tracking test */
 .etvid{display:block;background:#000;border-radius:6px;object-fit:cover;transform:scaleX(-1)}
@@ -420,7 +551,7 @@ const {useState,useEffect,useRef,useMemo,useCallback}=React;
 
 /* ================= data ================= */
 const LIMIT=600;
-const LV=['OK','DRIFT','ACT','ALERT'];
+const LV=['STABLE','DRIFT','ACT','ALERT'];
 const LVC=['var(--ok)','var(--drift)','var(--act)','var(--alert)'];
 const lvl=s=>s>=75?3:s>=50?2:s>=25?1:0;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -446,25 +577,24 @@ const MODULES=[{id:'cockpit',name:'Cockpit',sh:15,x:20,y:60,w:100,h:64},{id:'hab
 const REG={
   mind:{name:'Mind',side:'L',ly:46,ax:344,ay:44,fields:['sleep','stress','mood','fatigue'],
     why:'Months of confinement, broken sleep, heavy workload and cosmic radiation can each dull mood, focus and reaction speed.',
-    ind:{l:'Reaction time',u:'ms',band:[250,340],base:290,cur:v=>v.rt||295,max:520},keep:['Keep a fixed sleep and wake time','Take one real break every work block','Stay in touch with crew and family']},
+    ind:{l:'Sleep last night',u:'h',band:[7,9],base:7.5,cur:v=>v.sleep,max:10}},
   eyes:{name:'Eyes',side:'R',ly:78,ax:380,ay:78,fields:['blur'],
     why:'Without gravity, body fluid shifts toward the head and presses on the back of the eye. Many long-duration crew notice blurrier near vision (called SANS).',
-    ind:{l:'Near-vision blur',u:'/5',band:[1,2],base:1,cur:v=>v.blur,max:5},keep:['Do the weekly vision check','Keep adjustable-focus glasses nearby']},
+    ind:{l:'Near-vision blur',u:'/5',band:[1,2],base:1,cur:v=>v.blur,max:5}},
   heart:{name:'Heart',side:'L',ly:228,ax:364,ay:226,fields:['hr','ex','stress'],
     why:'In low gravity the heart and blood vessels do less work and lose conditioning. Resting pulse and exercise tolerance show it first.',
-    ind:{l:'Resting heart rate',u:'bpm',band:[50,85],base:64,cur:v=>v.hr,max:160},keep:['Complete the daily cardio session','Log resting pulse each morning']},
+    ind:{l:'Resting heart rate',u:'bpm',band:[50,85],base:64,cur:v=>v.hr,max:160}},
   immune:{name:'Immune',side:'R',ly:204,ax:431,ay:224,fields:['temp','sleep','antiox'],
     why:'Stress, short sleep and radiation weaken immune defences in space, and dormant viruses can reactivate. Body temperature is the simplest early sign.',
-    ind:{l:'Body temperature',u:'°C',band:[36.2,37.3],base:36.7,cur:v=>v.temp,max:40.5,min:35},keep:['Sleep 7 hours or more','Eat the antioxidant ration','Wipe down shared surfaces']},
+    ind:{l:'Body temperature',u:'°C',band:[36.2,37.3],base:36.7,cur:v=>v.temp,max:40.5,min:35}},
   gut:{name:'Gut & Nutrition',side:'L',ly:356,ax:318,ay:356,fields:['nausea','water','cal'],
     why:'Thirst and appetite are blunted in space, so crews often under-drink and under-eat. Radiation storms can also bring on nausea within hours.',
-    ind:{l:'Water intake',u:'L',band:[2,3.5],base:2.6,cur:v=>v.water,max:4},keep:['Drink 2 to 3 L of water a day','Eat the full meal plan','Log what you skip']},
+    ind:{l:'Water intake',u:'L',band:[2,3.5],base:2.6,cur:v=>v.water,max:4}},
   bones:{name:'Bones & Muscle',side:'R',ly:548,ax:408,ay:548,fields:['ex','cal'],
     why:'Unloaded bones lose roughly 1% of density a month and muscles shrink unless they are loaded every day with resistive exercise.',
-    ind:{l:'Exercise',u:'min/day',band:[90,150],base:120,cur:v=>v.ex,max:180},keep:['About 2 hours of exercise daily','Load hips and spine: squats, deadlifts','Take vitamin D with meals']},
+    ind:{l:'Exercise',u:'min/day',band:[90,150],base:120,cur:v=>v.ex,max:180}},
   radiation:{name:'Whole-body Radiation',side:'L',ly:700,ax:222,ay:700,fields:[],
-    why:'Beyond Earth’s magnetic field, cosmic rays give a steady background dose and solar storms add sudden spikes. Dose adds up across a whole career (NASA limit: 600 mSv).',
-    keep:['Sleep in the best-shielded module','Wear your dosimeter','Follow ALARA: as low as reasonably achievable']},
+    why:'Beyond Earth’s magnetic field, cosmic rays give a steady background dose and solar storms add sudden spikes. Dose adds up across a whole career (NASA limit: 600 mSv).'},
 };
 const RK=Object.keys(REG);
 /* camera targets [centre x, centre y, zoom] and close-up crops, in the 720 x 850 plate */
@@ -508,15 +638,14 @@ const FIELDS={
   water:{l:'Water today',u:' L',min:0,max:4,step:.25},cal:{l:'Food eaten vs plan',u:'%',min:30,max:110,step:5},
   antiox:{l:'Fruit / antioxidant servings',min:0,max:5},ex:{l:'Exercise today',u:' min',min:0,max:180,step:10},
 };
-const DEF={mood:4,stress:2,fatigue:2,sleep:7.5,hr:64,temp:36.7,nausea:1,blur:1,water:2.5,cal:95,antiox:3,ex:120,rt:null,et:null};
+const DEF={mood:4,stress:2,fatigue:2,sleep:7.5,hr:64,temp:36.7,nausea:1,blur:1,water:2.5,cal:95,antiox:3,ex:120,et:null};
 /* every driver = a symptom or exposure, with the issue name and what to do about it */
 const DR={
   sleep:{l:'Short sleep',issue:'Severe sleep loss',acts:['Stop safety-critical tasks and hand over to a crewmate','Take a protected 90-minute sleep period now','Dim lights, no caffeine, and plan 8 hours tonight']},
   stress:{l:'High stress',issue:'Stress overload',acts:['Pause and breathe slowly for 5 minutes (4 s in, 6 s out)','Tell a crewmate how you feel','Request a private conference with family or psych support']},
   mood:{l:'Low mood',issue:'Low mood',acts:['Talk to a crewmate now; do not isolate','Do 20 minutes of exercise or a favourite activity','Flag it in the next flight surgeon report']},
-  fatigue:{l:'Fatigue',issue:'Heavy fatigue',acts:['Stop safety-critical work','Rest 20 minutes and drink 500 ml of water','Repeat the reaction test after resting']},
+  fatigue:{l:'Fatigue',issue:'Heavy fatigue',acts:['Stop safety-critical work','Rest 20 minutes and drink 500 ml of water','Run the eye-tracking test after resting']},
   eyefat:{l:'Eye signs of fatigue (webcam test)',issue:'Eye signs of fatigue',acts:['Stop safety-critical tasks until you have rested','Rest with your eyes closed for 20 minutes, then repeat the eye-tracking test','Check your sleep log and plan a full sleep period tonight']},
-  rt:{l:'Slow reaction time',issue:'Slowed reactions',acts:['Do not pilot, dock or run EVA tasks','Rest 20 minutes, then retest','Check your sleep log and cabin CO₂']},
   confine:{l:'Time in confinement',issue:'Long confinement',acts:['Keep your daily routine and exercise','Schedule crew social time today','Use the daily check-in to track mood']},
   gcr:{l:'Accumulated radiation',issue:'High career radiation dose',acts:['Sleep and work in the best-shielded module','Skip non-essential EVAs','Report dose to the flight surgeon']},
   co2:{l:'Cabin CO₂',issue:'Elevated cabin CO₂',acts:['Check the CO₂ scrubber and increase airflow','Move to a better ventilated module','Report any headache to the crew']},
@@ -540,16 +669,27 @@ const DR={
   career:{l:'Career dose used',issue:'Career radiation limit approaching',acts:['Move sleep station to the best-shielded module','Cancel non-essential EVAs','Send dose record to the flight surgeon']},
   rate:{l:'Current dose rate',issue:'Radiation storm',acts:['Move to the Water-Wall Cargo Bay now','Stay sheltered until the dose rate falls','Put water and food bags between you and the hull']},
   skin:{l:'Skin photo finding',issue:'Skin redness',acts:['Photograph the area again in 1 hour','Keep the skin cool and covered','Report with the surgeon report']},
+  sleepDrift:{l:'Sleeping less than your baseline',issue:'Sleep drifting down',acts:['Protect a full sleep period tonight','Move late tasks earlier and dim lights an hour before sleep','Watch the trend in the daily check-in']},
+  stressDrift:{l:'Stress above your baseline',issue:'Stress creeping up',acts:['Take 5 minutes of slow breathing (4 s in, 6 s out)','Talk it through with a crewmate','Flag the trend in the next flight surgeon report']},
+  moodDrift:{l:'Mood below your baseline',issue:'Mood drifting down',acts:['Schedule crew social time today','Do 20 minutes of exercise or a favourite activity','Flag the trend in the next flight surgeon report']},
+  fatigueDrift:{l:'More tired than your baseline',issue:'Fatigue creeping up',acts:['Plan a rest break before safety-critical work','Check sleep and water against your baseline','Run the eye-tracking test after resting']},
+  eyeDrift:{l:'Eye test worse than your baseline',issue:'Eye fatigue signs rising',acts:['Rest with your eyes closed for 20 minutes, then repeat the eye-tracking test','Avoid safety-critical tasks until it improves','Compare with your sleep in the check-in']},
+  blurDrift:{l:'Near vision worse than your baseline',issue:'Vision drifting',acts:['Run the eye photo check and note which eye','Log vision weekly','Report the change to the flight surgeon']},
+  hrDrift:{l:'Resting pulse away from your baseline',issue:'Resting pulse drifting',acts:['Recheck your pulse by hand for a full minute','Log resting pulse each morning','Report a steady change to the flight surgeon']},
+  tempDrift:{l:'Temperature above your baseline',issue:'Temperature creeping up',acts:['Recheck temperature in 30 minutes','Drink 500 ml of fluid and rest','Watch for other signs of infection']},
+  nauseaDrift:{l:'More nausea than your baseline',issue:'Nausea creeping up',acts:['Sip water slowly and eat small meals','Avoid sudden head movement','Report it if it lasts more than a day']},
   hist:{l:'History in health log',issue:'Known history',acts:['Review the related health-log entry','Keep the linked fitness goal on schedule']},
 };
 const HISTMAP={bone:'bones',back:'bones',eye:'eyes',cardio:'heart',immune:'immune'};
-const TAGS={resp:'Respiratory',bone:'Bone',back:'Spine',eye:'Vision',cardio:'Heart',immune:'Immune',flight:'Spaceflight',other:'Other'};
+const TAGS={resp:'Respiratory',bone:'Bone',back:'Spine',eye:'Vision',cardio:'Heart',immune:'Immune',flight:'Spaceflight',eyetest:'Eye-tracking test',other:'Other'};
 const CREW0=[
  {id:'a1',name:'Cmdr. A. Reyes',role:'Commander',age:41,prior:56,log:[
   {id:1,date:'1995-06-12',tag:'resp',note:'Childhood asthma, mild. Outgrown by age 14.'},
   {id:2,date:'2006-03-20',tag:'bone',note:'Left wrist fracture (skiing). Healed; bone density scan normal.'},
   {id:3,date:'2019-09-02',tag:'back',note:'Lower-back strain after centrifuge training. 3 weeks of physiotherapy.'},
   {id:4,date:'2023-05-14',tag:'flight',note:'Space station mission, 120 days. Career dose after flight: 56 mSv. Mild far-sighted shift.'}]},
+ /* blank slate: no history, no prior dose, nothing pre-filled */
+ {id:'a4',name:'New crew member',role:'Role not set',age:null,prior:0,log:[]},
  {id:'a2',name:'Dr. M. Okafor',role:'Mission Specialist',age:37,prior:0,log:[
   {id:1,date:'2002-11-03',tag:'eye',note:'Short-sightedness diagnosed at 12, corrected with lenses.'},
   {id:2,date:'2015-07-19',tag:'cardio',note:'Low resting heart rate (48 bpm). Cleared by cardiology: athletic heart.'},
@@ -570,12 +710,11 @@ const GOALDEFS={
 
 /* ================= model ================= */
 function rateScore(e){return e<=1?e*12:e<=5?12+(e-1)*8:e<=20?44+(e-5)*2.4:Math.min(100,80+(e-20)*.7)}
-function assess({v,day,E,H,cum,eff,photo,tags}){
+function assess({v,day,E,H,cum,eff,photo,tags,b}){
   const R={};RK.forEach(k=>R[k]=[]);
   const add=(r,id,pts)=>{if(pts>=1)R[r].push({id,pts})};
   const f=cum/LIMIT,m=Math.min(1,day/180),exC=Math.min(v.ex,150)/150*.75,storm=eff>5;
   add('mind','sleep',(7-v.sleep)*12);add('mind','stress',(v.stress-2)*11);add('mind','mood',(3-v.mood)*11);add('mind','fatigue',(v.fatigue-2)*10);
-  if(v.rt)add('mind','rt',Math.min(30,(v.rt-330)/4));
   if(v.et)add('mind','eyefat',v.et.pts);
   if(H.isolation)add('mind','confine',m*18);if(H.radiation)add('mind','gcr',f*20);
   if(H.hostile)add('mind','co2',(E.co2-3000)/60);if(H.distance&&E.delay>=60)add('mind','delay',6);
@@ -592,6 +731,11 @@ function assess({v,day,E,H,cum,eff,photo,tags}){
   if(H.gravity)add('bones','unload',(6+m*55)*E.gf*(1-exC));
   add('bones','cal',(70-v.cal)*.5);add('bones','noex',v.ex<30?12:0);
   if(H.radiation){const a=f*90,b=rateScore(eff);add('radiation','career',a>=b?a:a*.3);add('radiation','rate',b>a?b:b*.3);add('radiation','skin',photo.skin*20)}
+  /* drift from this person's own baseline: small tolerances absorb day-to-day noise; catches slow change that stays inside population ranges */
+  if(b){add('mind','sleepDrift',(b.sleep-v.sleep-.5)*20);add('mind','stressDrift',(v.stress-b.stress-.5)*10);add('mind','moodDrift',(b.mood-v.mood-.5)*10);add('mind','fatigueDrift',(v.fatigue-b.fatigue-.5)*10);
+    if(v.et&&b.et)add('mind','eyeDrift',v.et.pts-b.et.pts-4);
+    add('eyes','blurDrift',(v.blur-b.blur)*12);add('heart','hrDrift',(Math.abs(v.hr-b.hr)-8)*1.5);
+    add('immune','tempDrift',(v.temp-b.temp-.3)*35);add('gut','nauseaDrift',(v.nausea-b.nausea)*12)}
   [...new Set(tags.map(t=>HISTMAP[t]).filter(Boolean))].forEach(r=>add(r,'hist',6));
   const out={};RK.forEach(k=>{const d=R[k].sort((a,b)=>b.pts-a.pts),s=clamp(d.reduce((a,x)=>a+x.pts,0),0,100);out[k]={score:s,lv:lvl(s),drivers:d}});
   return out;
@@ -627,16 +771,28 @@ function Field({k,v,set,pre=''}){const F=FIELDS[k],id=pre+'f_'+k;return <div cla
   <label htmlFor={id}><span>{F.l}</span><b className="mono">{v[k]}{F.u||''}</b></label>
   <input id={id} type="range" min={F.min} max={F.max} step={F.step||1} value={v[k]} onChange={e=>set(k,+e.target.value)}/>
   {F.ends&&<div className="ends"><span>{F.ends[0]}</span><span>{F.ends[1]}</span></div>}</div>}
+/* Line chart with a cursor. Point at it, drag a finger across it, or focus it and press the arrow keys: the cursor snaps to the nearest reading
+   and the line above the chart shows its timestamp (mission day and calendar date, counting back from today) and each value. */
 function Chart({data,lines,yMax,yMin=0,limit,band,title,h=170}){
+  const [ci,setCi]=useState(null),svg=useRef();
   const W=420,H=h,p={l:40,r:10,t:10,b:22},x1=Math.max(1,data[data.length-1].d);
   const X=v=>p.l+v/x1*(W-p.l-p.r),Y=v=>H-p.b-clamp((v-yMin)/(yMax-yMin),0,1)*(H-p.t-p.b);
-  return <figure style={{margin:0}}><svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label={title}>
+  const last=data.length-1,pt=ci==null?null:data[Math.min(ci,last)];
+  const when=pt&&`Day ${pt.d} · ${pt.d>=x1?'today':new Date(Date.now()-(x1-pt.d)*864e5).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}`;
+  const vals=pt?lines.map(l=>{const u=(l.u||'').trim();return {l,n:l.u==null?l.n:l.n.replace(/ \([^)]*\)$/,''),v:fx(pt[l.k],l.dp??(yMax-yMin<50?1:0))+(u?(u[0]==='/'?'':' ')+u:'')}}):[];
+  const near=e=>{const b=svg.current.getBoundingClientRect(),x=(e.clientX-b.left)/b.width*W;let bi=0;data.forEach((d,i)=>{if(Math.abs(X(d.d)-x)<Math.abs(X(data[bi].d)-x))bi=i});setCi(bi)};
+  const key=e=>{const c=Math.min(ci??last,last),to={ArrowLeft:c-1,ArrowRight:c+1,Home:0,End:last}[e.key];if(to==null)return;e.preventDefault();setCi(clamp(to,0,last))};
+  return <figure style={{margin:0}}><div className="chart" role="slider" tabIndex={0} aria-label={title+', readings by mission day. Use the left and right arrow keys.'} aria-valuemin={0} aria-valuemax={last} aria-valuenow={Math.min(ci??last,last)} aria-valuetext={pt?when+'. '+vals.map(x=>x.n+' '+x.v).join(', '):'No reading selected'}
+     onKeyDown={key} onFocus={()=>setCi(i=>i??last)} onBlur={()=>setCi(null)} onPointerDown={near} onPointerMove={near} onPointerLeave={e=>{if(e.pointerType==='mouse')setCi(null)}}>
+   <div className="read">{pt?<React.Fragment><b className="mono">{when}</b>{vals.map(x=><span key={x.l.k}><i style={{background:x.l.c}}/>{x.n}: <b className="mono">{x.v}</b></span>)}</React.Fragment>:<span className="sub">Point at the chart, or select it and press the arrow keys, to read a value.</span>}</div>
+   <svg ref={svg} viewBox={`0 0 ${W} ${H}`} width="100%" aria-hidden="true" style={{display:'block'}}>
     {band&&<rect x={p.l} width={W-p.l-p.r} y={Y(band[1])} height={Y(band[0])-Y(band[1])} fill="var(--ok)" opacity=".12"/>}
     {[0,.5,1].map(t=>{const v=yMin+t*(yMax-yMin);return <g key={t}><line x1={p.l} x2={W-p.r} y1={Y(v)} y2={Y(v)} stroke="var(--line)"/><text x={p.l-6} y={Y(v)+4} textAnchor="end" fontSize="10" fill="var(--mut)" className="mono">{yMax-yMin<12?fx(v,1):Math.round(v)}</text></g>})}
     {[0,.5,1].map(t=><text key={t} x={X(x1*t)} y={H-6} textAnchor={t===0?'start':t===1?'end':'middle'} fontSize="10" fill="var(--mut)" className="mono">day {Math.round(x1*t)}</text>)}
     {limit&&<g><line x1={p.l} x2={W-p.r} y1={Y(limit.v)} y2={Y(limit.v)} stroke="var(--alert)" strokeDasharray="3 4" strokeWidth="1.5"/><text x={W-p.r} y={Y(limit.v)+13} textAnchor="end" fontSize="10" fill="var(--alert)" fontWeight="700">{limit.l}</text></g>}
     {lines.map(l=><polyline key={l.k} fill="none" stroke={l.c} strokeWidth="2" strokeDasharray={l.dash} strokeLinejoin="round" points={data.map(d=>X(d.d)+','+Y(d[l.k])).join(' ')}/>)}
-   </svg>
+    {pt&&<g pointerEvents="none"><line x1={X(pt.d)} x2={X(pt.d)} y1={p.t} y2={H-p.b} stroke="var(--text)" opacity=".6"/>{lines.map(l=><circle key={l.k} cx={X(pt.d)} cy={Y(pt[l.k])} r="4" fill={l.c} stroke="var(--panel)" strokeWidth="1.5"/>)}</g>}
+   </svg></div>
    <figcaption className="row sub" style={{gap:14,fontSize:'.75rem'}}>{lines.map(l=><span key={l.k} className="row" style={{gap:6}}><svg width="22" height="6"><line x1="0" x2="22" y1="3" y2="3" stroke={l.c} strokeWidth="2.5" strokeDasharray={l.dash}/></svg>{l.n}</span>)}{band&&<span className="row" style={{gap:6}}><svg width="14" height="8"><rect width="14" height="8" fill="var(--ok)" opacity=".3"/></svg>baseline band</span>}</figcaption></figure>}
 
 /* ================= anatomy figure ================= */
@@ -666,19 +822,6 @@ function Figure({A,sel,pick,scanKey,hl,repair}){const [hk,setHk]=useState(null);
   </div>}
 
 /* ================= tools ================= */
-function ReactionTest({onDone}){
-  const [st,setSt]=useState('idle'),[pos,setPos]=useState(null),[left,setLeft]=useState(10),[res,setRes]=useState(null);
-  const t0=useRef(0),box=useRef(null),end=useRef(0),tick=useRef(),tm=useRef([]);
-  const spawn=()=>{if(!box.current)return;const r=box.current.getBoundingClientRect();setPos({x:Math.random()*(r.width-56),y:Math.random()*(r.height-56)});t0.current=performance.now()};
-  const start=()=>{tm.current=[];setRes(null);setSt('run');setLeft(10);end.current=performance.now()+10000;setTimeout(spawn,60);
-    tick.current=setInterval(()=>{setLeft(Math.max(0,Math.ceil((end.current-performance.now())/1000)));
-      if(performance.now()>=end.current){clearInterval(tick.current);setSt('done');setPos(null);const n=tm.current.length,a=n?Math.round(tm.current.reduce((x,y)=>x+y,0)/n):null;setRes({a,n});if(a)onDone(a)}},200)};
-  useEffect(()=>()=>clearInterval(tick.current),[]);
-  return <div><div className="row sp"><span className="lbl">10-second reaction test</span><span className="chip">{st==='run'?left+' s':'tap targets'}</span></div>
-   <div ref={box} style={{position:'relative',height:160,border:'var(--bw) dashed var(--line)',borderRadius:6,marginTop:8,background:'var(--panel2)',overflow:'hidden',display:'grid',placeItems:'center'}}>
-    {st!=='run'&&<div style={{textAlign:'center'}}>{res&&<div className="mono" style={{fontSize:'1.4rem',marginBottom:6}}>{res.a??'no taps'}{res.a?' ms':''}<span className="sub"> · {res.n} taps</span></div>}<button className="btn pri" onClick={start}>{st==='done'?'Run again':'Start test'}</button></div>}
-    {st==='run'&&pos&&<button className="target" aria-label="Target" style={{left:pos.x,top:pos.y}} onPointerDown={()=>{tm.current.push(Math.round(performance.now()-t0.current));spawn()}}/>}
-   </div></div>}
 const PHOTO={eyes:['No swelling pattern seen.','Mild swelling pattern at the back of the eye. Keep watching.','Marked swelling pattern. Send to the flight surgeon.'],skin:['Skin looks normal.','Faint redness. Recheck in 1 hour.','Strong redness over a wide area. Treat as possible radiation skin injury.']};
 function PhotoCheck({kind,val,set}){const [busy,setBusy]=useState(false),[msg,setMsg]=useState(null),[cam,setCam]=useState(false),[shot,setShot]=useState(null),[q,setQ]=useState(null);
   const what=kind==='eyes'?'eye':'skin';
@@ -813,11 +956,23 @@ function Warp({k}){const ref=useRef();
     raf=requestAnimationFrame(frame);return()=>{cancelAnimationFrame(raf);g.clearRect(0,0,W,H)}},[k]);
   return <canvas ref={ref} className="warp" aria-hidden="true"/>}
 /* assistant voices: eight names, each mapped to a different system voice where the browser has one */
-const PERSONAS=[{n:'Nova',g:'f',pitch:1.05,rate:1.02},{n:'Orion',g:'m',pitch:.9,rate:1},{n:'Luna',g:'f',pitch:1.2,rate:.97},{n:'Atlas',g:'m',pitch:.72,rate:.95},{n:'Vega',g:'f',pitch:.92,rate:1.08},{n:'Juno',g:'f',pitch:1.1,rate:.9},{n:'Sol',g:'m',pitch:1.02,rate:1.08},{n:'Lyra',g:'f',pitch:1.32,rate:1.04}];
+/* assistant voices: calm settings (pitch 0.95-1.05, rate 0.88-0.96); the most natural installed voice is matched to each persona */
+const PERSONAS=[{n:'Aria',g:'f',pitch:1,rate:.92,desc:'Warm and steady'},{n:'Sage',g:'m',pitch:.97,rate:.9,desc:'Calm and grounded'},{n:'Willow',g:'f',pitch:1.03,rate:.94,desc:'Soft and gentle'},
+ {n:'Rowan',g:'m',pitch:1,rate:.93,desc:'Clear and reassuring'},{n:'Iris',g:'f',pitch:.98,rate:.89,desc:'Slow and soothing'},{n:'Ellis',g:'m',pitch:.96,rate:.95,desc:'Quiet and friendly'}];
+const BADV=new Set(); /* voices that failed to start this session */
+const isFemaleVoice=v=>/zira|aria|jenny|michelle|sonia|libby|natasha|clara|emma|ava|samantha|susan|hazel|female|ana\b|sara|nancy|amber|ashley|cora|elizabeth|jane|monica|maisie|molly|neerja|leah|mia|catherine|heera|linda|google us english/i.test(v.name);
+/* higher = more natural: neural/online voices, then Google, then the rest; espeak, David/Zira and voices that failed rank last */
+function voiceScore(v){const n=v.name;let s=0;
+  if(/natural|neural|online|premium|enhanced/i.test(n))s+=100;else if(/google/i.test(n))s+=60;
+  if(/e-?speak/i.test(n))s-=100;if(/microsoft (david|zira)\b/i.test(n))s-=50;if(BADV.has(n))s-=200;
+  if(/^en[-_](us|gb)/i.test(v.lang))s+=5;return s}
+/* give each persona, in order, the best unused voice of its gender (then of any gender); espeak is used only when nothing better is installed */
 function voiceFor(i){let all=[];try{all=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang))}catch(e){}if(!all.length)return null;
-  const isF=v=>/zira|aria|jenny|michelle|sonia|libby|natasha|clara|emma|ava|samantha|susan|hazel|female|ana\b|sara|nancy|amber|ashley|cora|elizabeth|jane|monica|maisie|molly|neerja|leah|mia|catherine|heera|linda|google us english/i.test(v.name);
-  const p=PERSONAS[i],F=all.filter(isF),M=all.filter(v=>!isF(v)),pool=(p.g==='f'?F:M).length?(p.g==='f'?F:M):all;
-  return pool[PERSONAS.slice(0,i).filter(x=>x.g===p.g).length%pool.length]}
+  all=all.map((v,k)=>({v,k,s:voiceScore(v)})).sort((a,b)=>b.s-a.s||a.k-b.k).map(x=>x.v);
+  const good=all.filter(v=>!/e-?speak/i.test(v.name)&&!BADV.has(v.name)),pool=good.length?good:all,used=new Set();let pick=null;
+  for(let j=0;j<=i;j++){const f=PERSONAS[j].g==='f',mine=pool.filter(v=>isFemaleVoice(v)===f);
+    pick=mine.find(v=>!used.has(v))||pool.find(v=>!used.has(v))||mine[0]||pool[0];used.add(pick)}
+  return pick}
 function ShelterMap({loc,setLoc,storm}){return <svg viewBox="0 0 380 170" width="100%" role="group" aria-label="Spacecraft shielding map">
   <path d="M120 92h10M250 92h10" stroke="var(--mut)" strokeWidth="3"/>
   {MODULES.map(m=>{const safe=m.id==='cargo',here=loc===m.id;return <g key={m.id} tabIndex={0} role="button" aria-label={`${m.name}, ${m.sh}% shielding${here?', you are here':''}. Move here.`} style={{cursor:'pointer'}} onClick={()=>setLoc(m.id)} onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();setLoc(m.id)}}}>
@@ -909,7 +1064,7 @@ function EyeTest({sim,auto,onClose,onDone}){const dlg=useDialogFocus();
   return <div className="modal" role="dialog" aria-modal="true" aria-label="Eye-tracking fatigue test"><div className="card big" ref={dlg} tabIndex={-1}>
     <div className="row sp" style={{marginBottom:10}}><span className="lbl">Eye-tracking fatigue test · {head}</span><button className="btn sm" onClick={onClose}>Close</button></div>
     {st==='loading'&&<p className="sub" role="status">Starting the camera and loading the eye tracker (about 18 MB the first time). If the browser asks, choose Allow.</p>}
-    {st==='error'&&<div><p className="note al" role="alert">{err}</p><p className="sub">The tap reaction test in the Mind panel works without the camera.</p>
+    {st==='error'&&<div><p className="note al" role="alert">{err}</p>
       <div className="row"><button className="btn pri" data-switch onClick={boot}>Try again</button></div></div>}
     {!sim&&(st==='pre'||st==='run')&&<video ref={vid} className={'etvid '+st} autoPlay playsInline muted aria-label="Camera preview"/>}
     {st==='pre'&&<div>
@@ -936,21 +1091,21 @@ function EyeTest({sim,auto,onClose,onDone}){const dlg=useDialogFocus();
 /* ================= workout routine ================= */
 function buildRoutine(A,tags,sheltering){
   const has=(r,id,min=8)=>A[r].drivers.some(d=>d.id===id&&d.pts>=min),B=[];
-  if(has('immune','fever'))return {rest:true,blocks:[{t:'Rest day',min:15,why:'Raised temperature today. Training with a fever slows recovery, so the session is replaced.',items:[['Gentle mobility, in bunk','10 min'],['Paced breathing, 4 s in / 6 s out','5 min'],['Fluids','500 ml every 2 hours']]}]};
-  if(sheltering)return {blocks:[{t:'Shelter circuit, inside the Cargo Bay',min:25,why:'Radiation storm in progress. The treadmill and resistive device are outside the shelter, so today uses bands only.',items:[['Band squat','3 × 15'],['Band row','3 × 15'],['Strap push-up','3 × 12'],['Plank','3 × 45 s'],['Band pull-apart','3 × 20']]}]};
+  if(has('immune','fever'))return {rest:true,blocks:[{t:'Rest day',min:15,src:[{k:'immune',c:'Training replaced with rest and fluids'}],why:'Raised temperature today. Training with a fever slows recovery, so the session is replaced.',items:[['Gentle mobility, in bunk','10 min'],['Paced breathing, 4 s in / 6 s out','5 min'],['Fluids','500 ml every 2 hours']]}]};
+  if(sheltering)return {blocks:[{t:'Shelter circuit, inside the Cargo Bay',min:25,src:[{k:'radiation',c:'Bands-only circuit inside the shelter'}],why:'Radiation storm in progress. The treadmill and resistive device are outside the shelter, so today uses bands only.',items:[['Band squat','3 × 15'],['Band row','3 × 15'],['Strap push-up','3 × 12'],['Plank','3 × 45 s'],['Band pull-apart','3 × 20']]}]};
   const easy=A.gut.lv>=2||has('heart','hrhigh')||has('mind','sleep',20);
   B.push({t:'Warm-up',min:10,items:[['Cycle ergometer, easy spin','5 min'],['Mobility: hips, shoulders, ankles','5 min']]});
-  let res=A.bones.lv>=1?{t:'Resistive: bone-loading focus',min:45,why:'Bones & Muscle is at '+LV[A.bones.lv]+'. Heavier, lower-rep lifts load the hip and spine where loss is fastest.',items:[['Back squat','4 × 6, heavy'],['Deadlift','4 × 6, heavy'],['Single-leg heel raise','4 × 12 per side'],['Shoulder press','3 × 8']]}
-    :{t:'Resistive: maintenance',min:40,items:[['Back squat','3 × 10'],['Deadlift','3 × 8'],['Heel raise','3 × 15'],['Bench press','3 × 10']]};
-  if(tags.includes('back')){res.items=res.items.map(i=>i[0]==='Deadlift'?['Romanian deadlift, light, neutral spine',' 3 × 10']:i);res.why=(res.why?res.why+' ':'')+'Deadlift swapped for a lighter variation because of the back strain in the health log.'}
-  if(A.eyes.lv>=2){res.items=res.items.map(i=>[i[0],i[1].replace(', heavy','')+', about 70% load']);res.why=(res.why?res.why+' ':'')+'Eyes at '+LV[A.eyes.lv]+': load is capped and you should breathe out on every lift. Breath-holding raises pressure in the head.'}
-  if(easy){res.min=25;res.items=res.items.slice(0,2).map(i=>[i[0],'2 × 10, light']);res.why='Kept short and light today because of '+(A.gut.lv>=2?'gut symptoms':has('heart','hrhigh')?'a fast resting pulse':'severe sleep loss')+'.'}
+  let res=A.bones.lv>=1?{t:'Resistive: bone-loading focus',min:45,src:[{k:'bones',c:'Heavier, lower-rep lifts for hip and spine'}],why:'Bones & Muscle is at '+LV[A.bones.lv]+'. Heavier, lower-rep lifts load the hip and spine where loss is fastest.',items:[['Back squat','4 × 6, heavy'],['Deadlift','4 × 6, heavy'],['Single-leg heel raise','4 × 12 per side'],['Shoulder press','3 × 8']]}
+    :{t:'Resistive: maintenance',min:40,src:[],items:[['Back squat','3 × 10'],['Deadlift','3 × 8'],['Heel raise','3 × 15'],['Bench press','3 × 10']]};
+  if(tags.includes('back')){res.items=res.items.map(i=>i[0]==='Deadlift'?['Romanian deadlift, light, neutral spine',' 3 × 10']:i);res.src.push({k:'log',l:'Back strain',c:'Deadlift swapped for a lighter variation'});res.why=(res.why?res.why+' ':'')+'Deadlift swapped for a lighter variation because of the back strain in the health log.'}
+  if(A.eyes.lv>=2){res.src.push({k:'eyes',c:'Load capped at about 70%, breathe out on every lift'});res.items=res.items.map(i=>[i[0],i[1].replace(', heavy','')+', about 70% load']);res.why=(res.why?res.why+' ':'')+'Eyes at '+LV[A.eyes.lv]+': load is capped and you should breathe out on every lift. Breath-holding raises pressure in the head.'}
+  if(easy){res.src.push({k:A.gut.lv>=2?'gut':has('heart','hrhigh')?'heart':'mind',c:'Strength cut to 25 min, light weights'});res.min=25;res.items=res.items.slice(0,2).map(i=>[i[0],'2 × 10, light']);res.why='Kept short and light today because of '+(A.gut.lv>=2?'gut symptoms':has('heart','hrhigh')?'a fast resting pulse':'severe sleep loss')+'.'}
   B.push(res);
-  if(tags.includes('back'))B.push({t:'Core and spine',min:10,why:'From the health log: past lower-back strain.',items:[['Bird-dog','3 × 10 per side'],['Side plank','3 × 30 s per side'],['Dead bug','3 × 10']]});
-  if(easy)B.push({t:'Cardio: low intensity only',min:15,why:A.gut.lv>=2?'Nausea or low fluids today. Drink 500 ml first and stop if nausea rises.':has('heart','hrhigh')?'Resting pulse is high. Stay easy and recheck pulse afterwards.':'Very short sleep. Hard intervals on no sleep raise injury risk.',items:[['Cycle ergometer, easy','15 min, under 60% of max heart rate']]});
-  else if(A.heart.lv>=1)B.push({t:'Cardio: treadmill intervals',min:33,why:'Heart is at '+LV[A.heart.lv]+'. Short hard intervals rebuild fitness faster than steady running.',items:[['Treadmill, hard','4 × 4 min at 85 to 90% of max heart rate'],['Treadmill, easy between efforts','3 min each'],['Cool-down walk','5 min']]});
+  if(tags.includes('back'))B.push({t:'Core and spine',min:10,src:[{k:'log',l:'Back strain',c:'Extra core block to protect the spine'}],why:'From the health log: past lower-back strain.',items:[['Bird-dog','3 × 10 per side'],['Side plank','3 × 30 s per side'],['Dead bug','3 × 10']]});
+  if(easy)B.push({t:'Cardio: low intensity only',min:15,src:[{k:A.gut.lv>=2?'gut':has('heart','hrhigh')?'heart':'mind',c:'Cardio kept easy, under 60% of max heart rate'}],why:A.gut.lv>=2?'Nausea or low fluids today. Drink 500 ml first and stop if nausea rises.':has('heart','hrhigh')?'Resting pulse is high. Stay easy and recheck pulse afterwards.':'Very short sleep. Hard intervals on no sleep raise injury risk.',items:[['Cycle ergometer, easy','15 min, under 60% of max heart rate']]});
+  else if(A.heart.lv>=1)B.push({t:'Cardio: treadmill intervals',min:33,src:[{k:'heart',c:'Intervals to rebuild heart fitness'}],why:'Heart is at '+LV[A.heart.lv]+'. Short hard intervals rebuild fitness faster than steady running.',items:[['Treadmill, hard','4 × 4 min at 85 to 90% of max heart rate'],['Treadmill, easy between efforts','3 min each'],['Cool-down walk','5 min']]});
   else B.push({t:'Cardio: steady',min:30,items:[['Treadmill, steady','30 min at about 70% of max heart rate']]});
-  if(A.mind.lv>=1)B.push({t:'Recovery for mind',min:15,why:'Mind is at '+LV[A.mind.lv]+(has('mind','sleep')?'. Finish training at least 3 hours before sleep.':'. Slow movement and breathing lower stress hormones.'),items:[['Stretch and mobility flow','10 min'],['Paced breathing, 4 s in / 6 s out','5 min']]});
+  if(A.mind.lv>=1)B.push({t:'Recovery for mind',min:15,src:[{k:'mind',c:'Added a stretch and breathing block'}],why:'Mind is at '+LV[A.mind.lv]+(has('mind','sleep')?'. Finish training at least 3 hours before sleep.':'. Slow movement and breathing lower stress hormones.'),items:[['Stretch and mobility flow','10 min'],['Paced breathing, 4 s in / 6 s out','5 min']]});
   return {blocks:B}}
 
 /* ================= app ================= */
@@ -958,28 +1113,44 @@ function App(){
   const [env,setEnv]=useState('transit'),E=ENVS[env];
   const [H,setH]=useState({radiation:true,isolation:true,distance:true,gravity:true,hostile:true}),[hov,setHov]=useState(null);
   const [day,setDay]=useState(14),[flares,setFlares]=useState([]),[rateMan,setRateMan]=useState(null),[spe,setSpe]=useState(null),[loc,setLoc]=useState('hab');
-  const [crew,setCrew]=useState(()=>load('rs2_crew',CREW0)),[crewId,setCrewId]=useState('a1');
-  const [vits,setVits]=useState({}),[photos,setPhotos]=useState({}),[done,setDone]=useState({});
+  const [crew,setCrew]=useState(()=>{const cs=load('rs2_crew',CREW0);if(cs.some(x=>x.id==='a4'))return cs; /* crew saved before the blank profile existed: add it after the commander */
+    const i=cs.findIndex(x=>x.id==='a1');return [...cs.slice(0,i+1),CREW0.find(x=>x.id==='a4'),...cs.slice(i+1)]}),[crewId,setCrewId]=useState('a1');
+  const [vits,setVits]=useState({}),[photos,setPhotos]=useState({});
+  /* intro screen: true -> 'out' (zoom through) -> 'enter' (dashboard settles) -> false; skipped for #demo/test URLs */
+  const [intro,setIntro]=useState(()=>!location.hash);
+  const enterApp=useCallback(()=>{const q=matchMedia('(prefers-reduced-motion: reduce)').matches;setIntro('out');setTimeout(()=>setIntro('enter'),q?150:650);setTimeout(()=>setIntro(false),q?300:1500)},[]);
+  /* personal baselines {crewId:{date,day,values}}; bLater = postponed this session; ciBase/etBase = the check-in / eye test is part of a baseline */
+  const [base,setBase]=useState(()=>load('rs2_baseline',{})),[bLater,setBLater]=useState({}),[bIntro,setBIntro]=useState(false),[ciBase,setCiBase]=useState(false),[etBase,setEtBase]=useState(false);
   const [sel,setSel]=useState(null),[tab,setTab]=useState('monitor'),[ack,setAck]=useState({}),[checkin,setCheckin]=useState(null),[checkins,setCheckins]=useState([]);
   const [mode,setMode]=useState('dark'),[str,setStr]=useState(100),[large,setLarge]=useState(false),[scan,setScan]=useState(false),[scanIdx,setScanIdx]=useState(0),[voice,setVoice]=useState(()=>load('rs2_voice',false)),[heard,setHeard]=useState('');
   const [persona,setPersona]=useState(()=>clamp(load('rs2_persona',0),0,PERSONAS.length-1)),[warpN,setWarpN]=useState(0),[speakOn,setSpeakOn]=useState(true),[ptab,setPtab]=useState('status'),[menu,setMenu]=useState(false),[etOpen,setEtOpen]=useState(null),[a11y,setA11y]=useState(false),[mic,setMic]=useState('off');
-  const speaking=useRef(false),speakRef=useRef(true),micStream=useRef(null),personaRef=useRef(0),firstSel=useRef(true);speakRef.current=speakOn;personaRef.current=persona;
+  const speaking=useRef(false),sayN=useRef(0),speakRef=useRef(true),micStream=useRef(null),personaRef=useRef(0),firstSel=useRef(true);speakRef.current=speakOn;personaRef.current=persona;
   useEffect(()=>{try{speechSynthesis.getVoices()}catch(e){}},[]);
   useEffect(()=>{if(firstSel.current){firstSel.current=false;return}setWarpN(n=>n+1)},[sel]);
   /* assistant voice: shows the reply and reads it aloud; the recogniser ignores input while it is talking */
   const say=useCallback((text,force)=>{if((!speakRef.current&&!force)||!window.speechSynthesis)return;
-    try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text),P=PERSONAS[personaRef.current],vc=voiceFor(personaRef.current);if(vc)u.voice=vc;u.pitch=P.pitch;u.rate=P.rate;speaking.current=true;u.onend=u.onerror=()=>setTimeout(()=>{speaking.current=false},600);speechSynthesis.speak(u)}catch(e){speaking.current=false}},[]);
-  const hush=()=>{try{speechSynthesis.cancel()}catch(e){};speaking.current=false};
+    /* one utterance per sentence gives natural pauses; only the newest reply's last sentence clears the "speaking" flag */
+    try{speechSynthesis.cancel();const n=++sayN.current,P=PERSONAS[personaRef.current],vc=voiceFor(personaRef.current);
+      const parts=String(text).split(/(?<=[.!?])\s+(?=["'(A-Z0-9])/).map(x=>x.trim()).filter(Boolean);speaking.current=true;
+      parts.forEach((t,k)=>{const u=new SpeechSynthesisUtterance(t);if(vc)u.voice=vc;u.pitch=P.pitch;u.rate=P.rate;
+        u.onerror=e=>{if(vc&&e&&!['interrupted','canceled'].includes(e.error))BADV.add(vc.name);if(n===sayN.current&&k===parts.length-1)setTimeout(()=>{if(n===sayN.current)speaking.current=false},600)};
+        if(k===parts.length-1)u.onend=()=>setTimeout(()=>{if(n===sayN.current)speaking.current=false},600);
+        speechSynthesis.speak(u)});if(!parts.length)speaking.current=false}catch(e){speaking.current=false}},[]);
+  const hush=()=>{sayN.current++;try{speechSynthesis.cancel()}catch(e){};speaking.current=false};
+  const preview=()=>say(`Hi, I'm ${PERSONAS[personaRef.current].n}. Take a slow breath. I'll keep an eye on things.`,true);
   const pickVoice=i=>{setPersona(i);personaRef.current=i;save('rs2_persona',i);say('Hello, my name is '+PERSONAS[i].n+'.',true)};
   const [gp,setGp]=useState(()=>load('rs2_goals',{})),[sess,setSess]=useState({}),[toasts,setToasts]=useState([]),[now,setNow]=useState(Date.now()),[jit,setJit]=useState(0);
   const [wx,setWx]=useState({mode:'sim',events:[],loading:false,msg:''});
 
   const c=crew.find(x=>x.id===crewId),v=vits[crewId]||DEF,photo=photos[crewId]||{eyes:0,skin:0};
   const set=(k,val)=>setVits(s=>({...s,[crewId]:{...(s[crewId]||DEF),[k]:val}}));
+  /* every valid eye-tracking result is also written to that crew member's health log, with the time it was taken */
+  const logEt=(id,r)=>{const t=new Date(),p=n=>String(n).padStart(2,'0'),m=window.EyeRun.metrics(r).map(x=>x.l+' '+(x.v==null?'not measured':x.v+(x.u==='ms'?' ':'')+x.u+(x.txt?' ('+x.txt+')':''))).join('; ');
+    setCrew(cs=>cs.map(x=>x.id===id?{...x,log:[...x.log,{id:Date.now(),date:`${t.getFullYear()}-${p(t.getMonth()+1)}-${p(t.getDate())}`,tag:'eyetest',note:`Taken at ${p(t.getHours())}:${p(t.getMinutes())} on mission day ${day}. Fatigue signs: ${ET_LVL[r.level]}. Webcam estimates from ${r.secs} s of tracking: ${m}.`}]}:x))};
   const toast=useCallback(m=>{const id=Math.random();setToasts(t=>[...t,{id,m}]);setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),6000)},[]);
   useEffect(()=>{applyTheme(mode,str)},[mode,str]);
   useEffect(()=>{document.documentElement.dataset.large=large},[large]);
-  useEffect(()=>save('rs2_crew',crew),[crew]);useEffect(()=>save('rs2_goals',gp),[gp]);
+  useEffect(()=>save('rs2_crew',crew),[crew]);useEffect(()=>save('rs2_baseline',base),[base]);useEffect(()=>save('rs2_goals',gp),[gp]);
   useEffect(()=>{const i=setInterval(()=>{setNow(Date.now());setJit(j=>clamp(j+Math.round((Math.random()-.5)*6),-60,60))},1000);return()=>clearInterval(i)},[]);
   useEffect(()=>{if(spe&&spe.until<=now){setSpe(null);setRateMan(null);toast('Solar particle event has passed. Dose rate back to background.')}},[now,spe]);
 
@@ -988,9 +1159,14 @@ function App(){
   const eff=H.radiation?R*(1-mod.sh/100)/.55:0;
   const cum=c.prior+E.rate*day+flares.reduce((a,f)=>a+f.mSv,0);
   const tags=useMemo(()=>[...new Set(c.log.map(e=>e.tag))],[c]);
-  const A=useMemo(()=>assess({v,day,E,H,cum,eff,photo,tags}),[v,day,E,H,cum,eff,photo,tags]);
-  const doneN=Object.values(done).filter(Boolean).length;
-  const repair=clamp(58+(v.sleep-6)*4+(v.antiox-3)*3+doneN*3-(cum/LIMIT)*25-(eff>5?15:0),5,100);
+  const bv=base[crewId]&&base[crewId].values;
+  const A=useMemo(()=>assess({v,day,E,H,cum,eff,photo,tags,b:bv}),[v,day,E,H,cum,eff,photo,tags,bv]);
+  /* first use: a crew member with no baseline is asked to take one (skipped for #demo/test URLs) */
+  useEffect(()=>{setBIntro(!base[crewId]&&!bLater[crewId]&&!location.hash)},[crewId]);
+  const startBase=()=>{setBIntro(false);setCiBase(true);setCheckin(0)};
+  const laterBase=()=>{setBIntro(false);setBLater(s=>({...s,[crewId]:true}))};
+  const retakeBase=()=>{if(confirm('Retake the baseline for '+c.name+'? The saved baseline from '+base[crewId].date+' is replaced when you finish.'))startBase()};
+  const repair=clamp(58+(v.sleep-6)*4+(v.antiox-3)*3-(cum/LIMIT)*25-(eff>5?15:0),5,100);
   const rising=H.radiation&&(eff>=3||R>E.rate*1.5);
 
   /* urgent pop-up: worst un-acknowledged ALERT region */
@@ -1003,7 +1179,7 @@ function App(){
   useEffect(()=>{if(!a11y)return;const h=e=>{if(!e.target.closest('.a11ywrap'))setA11y(false)};document.addEventListener('pointerdown',h);return()=>document.removeEventListener('pointerdown',h)},[a11y]);
   /* scan + keyboard */
   useEffect(()=>{if(!scan)return;const i=setInterval(()=>setScanIdx(x=>(x+1)%RK.length),1800);return()=>clearInterval(i)},[scan]);
-  useEffect(()=>{const h=e=>{if(e.key==='Escape'){if(urgent)doAck();else if(checkin!==null)setCheckin(null);else if(etOpen)setEtOpen(null);else if(a11y)setA11y(false);else if(menu)setMenu(false);return}
+  useEffect(()=>{const h=e=>{if(e.key==='Escape'){if(urgent)doAck();else if(checkin!==null){setCheckin(null);setCiBase(false)}else if(etOpen){setEtOpen(null);setEtBase(false)}else if(bIntro)laterBase();else if(a11y)setA11y(false);else if(menu)setMenu(false);return}
      if(!scan||e.code!=='Space')return;if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName))return;e.preventDefault();
      if(urgent)doAck();else if(document.querySelector('.modal')){const sw=document.querySelector('.modal [data-switch]:not(:disabled)');if(sw)sw.click()}   /* one switch presses the main action of an open dialog */
      else{setSel(RK[scanIdx]);setTab('monitor')}};
@@ -1040,13 +1216,13 @@ function App(){
     if(/\b(status|summary|how am i)\b/.test(t)){say(statusText());return}
     if(/\b(help|what can i say|commands)\b/.test(t)){say('You can say a body system, such as heart. Set any slider, such as stress 4 or radiation 50 percent. Say the name of any button to press it. Say eye tracking test to check for fatigue with the camera. Ask what should I look at, explain the heart, read this aloud, or read the report. Say reset view to zoom out, and stop talking to silence me.');return}
     if(/explain|tell me about|what is|what are|describe|learn about|teach/.test(t)&&rk){openR(rk);setPtab('guide');say(`${REG[rk].name}. ${GUIDE[rk].ov} ${GUIDE[rk].fn} ${GUIDE[rk].how}`);return}
-    if(/\b(read|aloud|out loud)\b/.test(t)){if(t.includes('report')){setTab('report');say(reportSpeech())}else if(/fact/.test(t)&&(rk||sel)){const k=rk||sel;openR(k);setPtab('guide');say('Key facts. '+GUIDE[k].facts.join(' '))}else if(rk){openR(rk);say(regionText(rk,true))}else say(readPanel());return}
-    if(/what (should|do|can) i do|next steps|actions/.test(t)){const k=rk||sel||RK.slice().sort((a,b)=>A[b].score-A[a].score)[0];openR(k);say(regionText(k,true));return}
+    if(/\b(read|aloud|out loud)\b/.test(t)){if(t.includes('report')){setTab('report');say(reportSpeech())}else if(/fact/.test(t)&&(rk||sel)){const k=rk||sel;openR(k);setPtab('guide');say('Key facts. '+GUIDE[k].facts.join(' '))}else if(rk){openR(rk);say(regionText(rk))}else say(readPanel());return}
+    if(/what (should|do|can) i do|next steps|actions/.test(t)){const k=rk||sel||RK.slice().sort((a,b)=>A[b].score-A[a].score)[0];openR(k);say(regionText(k));return}
     if(/reset view|zoom out|full body|all systems|whole figure/.test(t)){setSel(null);setTab('monitor');say('Back to the full-body view.');return}
     if(/\b(guide|anatomy)\b/.test(t)&&sel){setPtab('guide');say('Showing the anatomy guide for '+REG[sel].name+'.');return}
     /* a spoken label that exactly names something on screen presses it */
     if(!(rk&&t.split(/\s+/).length===1)&&pressByVoice(t,true))return;
-    if(rk){openR(rk);say(regionText(rk,false));return}
+    if(rk){openR(rk);say(regionText(rk));return}
     if(/check.?in/.test(t)){setCheckin(0);say('Starting your check-in. Say a value for each slider, then say next.');return}
     if(t.includes('report')){setTab('report');say('Opening the surgeon report. Say read the report to hear it.');return}
     if(t.includes('trend')){setTab('trends');say('Showing trends.');return}
@@ -1095,8 +1271,8 @@ function App(){
 
   /* scenarios */
   const flare=()=>{setH(h=>({...h,radiation:true}));setFlares(f=>[...f,{day,mSv:25}]);setRateMan(45);setSpe({until:Date.now()+10*60*1000});setSel('radiation');setTab('monitor');set('nausea',2)};
-  const ff=()=>{setEnv('transit');setDay(180);setFlares([]);setSpe(null);setRateMan(null);setVits(s=>({...s,[crewId]:{...(s[crewId]||DEF),sleep:6,fatigue:3,antiox:1,rt:350,ex:60}}));setSel('mind');setTab('monitor');toast('Advanced to mission day 180.')};
-  const reset=()=>{setDay(14);setFlares([]);setSpe(null);setRateMan(null);setLoc('hab');setVits({});setPhotos({});setDone({});setSel(null);setAck({});setSess({});setH({radiation:true,isolation:true,distance:true,gravity:true,hostile:true})};
+  const ff=()=>{setEnv('transit');setDay(180);setFlares([]);setSpe(null);setRateMan(null);setVits(s=>({...s,[crewId]:{...(s[crewId]||DEF),sleep:6,fatigue:3,antiox:1,ex:60}}));setSel('mind');setTab('monitor');toast('Advanced to mission day 180.')};
+  const reset=()=>{setDay(14);setFlares([]);setSpe(null);setRateMan(null);setLoc('hab');setVits({});setPhotos({});setSel(null);setAck({});setSess({});setH({radiation:true,isolation:true,distance:true,gravity:true,hostile:true})};
 
   /* NASA DONKI */
   const fetchWx=async()=>{setWx(w=>({...w,loading:true}));const q=d=>d.toISOString().slice(0,10),e=new Date(),s=new Date(Date.now()-30*864e5);
@@ -1109,7 +1285,7 @@ function App(){
     if(h.includes('flare'))flare();if(h.includes('ff'))ff();if(h.includes('fever')){setVits(s=>({...s,a1:{...DEF,temp:39.2,sleep:5}}));setSel('immune')}
     ['light','contrast','night'].forEach(m=>{if(h.includes(m))setMode(m)});['fitness','report','trends','log'].forEach(m=>{if(h.includes(m))setTab(m)});if(h.includes('noack'))setAck({immune:'fever',radiation:'rate',gut:'storm'});
     /* eye-test self-tests: #eyetest (real camera), =run, =follow, =done replay synthetic samples, =saved records a synthetic result */
-    const em=h.match(/eyetest(?:=(\w+))?/);if(em){setSel('mind');if(em[1]==='saved'){const R=window.EyeRun.run(false);for(let t=0;t<R.total;t+=33)R.push(t,window.EyeRun.sim(t,R));const r=R.finish();setVits(s=>({...s,a1:{...(s.a1||DEF),et:r}}))}else setEtOpen({sim:em[1]||null})}},[]);
+    const em=h.match(/eyetest(?:=(\w+))?/);if(em){setSel('mind');if(em[1]==='saved'){const R=window.EyeRun.run(false);for(let t=0;t<R.total;t+=33)R.push(t,window.EyeRun.sim(t,R));const r=R.finish();setVits(s=>({...s,a1:{...(s.a1||DEF),et:r}}));logEt('a1',r)}else setEtOpen({sim:em[1]||null})}},[]);
 
   /* series */
   const series=useMemo(()=>{const out=[],step=Math.max(1,Math.round(day/60));let cc=c.prior;
@@ -1126,42 +1302,41 @@ function App(){
   const report=useMemo(()=>({simulated:true,notice:'Awareness tool. Not a diagnosis.',crew:{name:c.name,role:c.role},missionDay:day,environment:E.name,hazardsActive:Object.keys(H).filter(k=>H[k]).map(k=>HAZ[k].name),
     radiation:{careerDoseMSv:+fx(cum,1),limitMSv:LIMIT,percentOfLimit:+fx(cum/LIMIT*100,1),currentRateMSvPerDay:+fx(eff,2),location:mod.name},
     systems:RK.map(k=>({system:REG[k].name,status:LV[A[k].lv],strain:Math.round(A[k].score),drivers:A[k].drivers.map(d=>DR[d.id].l)})),
-    latestInputs:v,checkIns:checkins.filter(x=>x.crewId===crewId).length,countermeasuresCompleted:doneN,repairScore:Math.round(repair)}),[A,c,day,E,H,cum,eff,mod,v,checkins,crewId,doneN,repair]);
+    latestInputs:v,checkIns:checkins.filter(x=>x.crewId===crewId).length,repairScore:Math.round(repair)}),[A,c,day,E,H,cum,eff,mod,v,checkins,crewId,repair]);
 
   /* ---- assistant: what to look at, and spoken summaries ---- */
   const ranked=RK.filter(k=>A[k].lv>0).sort((x,y)=>A[y].score-A[x].score);
   const advise=()=>{const P=[];
-    if(!ranked.length)P.push('All seven systems are OK.');
+    if(!ranked.length)P.push('All seven systems are stable.');
     else{const k=ranked[0];P.push(`Look at ${REG[k].name} first. It is at ${LV[A[k].lv]}, mainly from ${DR[A[k].drivers[0].id].l.toLowerCase()}.`);
       if(ranked[1])P.push('Then '+ranked.slice(1,3).map(x=>`${REG[x].name}, ${LV[A[x].lv]}`).join(', and ')+'.')}
     if(rising)P.push(`Radiation is ${eff>=5?'at storm level':'rising'}. Open exposure guidance${loc!=='cargo'?' and move to the shelter':''}.`);
     if(!checkins.some(x=>x.crewId===crewId&&x.day===day))P.push('Today’s check-in is not done yet.');
     if(v.ex<60)P.push('Today’s workout is not logged. See Fitness.');
     return P.join(' ')};
-  const statusText=()=>`${c.name}, mission day ${day}. `+(ranked.length?ranked.map(k=>`${REG[k].name} is at ${LV[A[k].lv]}`).join('. ')+'. Everything else is OK.':'All seven systems are OK.')+` Career dose ${fx(cum,0)} of 600 millisieverts.`;
-  const regionText=(k,full)=>{const x=A[k],d=x.drivers.slice(0,3).map(q=>DR[q.id].l.toLowerCase());
-    let s=`${REG[k].name} is ${x.lv?'at '+LV[x.lv]:'OK'}.`;if(x.lv&&d.length)s+=` Driven by ${d.join(', ')}.`;
-    if(full||x.lv>=2){const ac=x.lv?topActs(x,3):REG[k].keep;s+=(x.lv?' Suggested actions: ':' To keep it this way: ')+ac.map((q,i)=>`${i+1}, ${q}`).join('. ')+'.'}
+  const statusText=()=>`${c.name}, mission day ${day}. `+(ranked.length?ranked.map(k=>`${REG[k].name} is at ${LV[A[k].lv]}`).join('. ')+'. Everything else is stable.':'All seven systems are stable.')+` Career dose ${fx(cum,0)} of 600 millisieverts.`;
+  const regionText=k=>{const x=A[k],d=x.drivers.slice(0,3).map(q=>DR[q.id].l.toLowerCase());
+    let s=`${REG[k].name} is ${x.lv?'at '+LV[x.lv]:'stable'}.`;if(x.lv&&d.length)s+=` Driven by ${d.join(', ')}.`;
     return s};
   const fitnessSpeech=()=>{const p=buildRoutine(A,tags,eff>5||!!spe);return `Today’s session is ${p.blocks.reduce((s,b)=>s+b.min,0)} minutes: ${p.blocks.map(b=>b.t).join(', ')}.`+(p.blocks.find(b=>b.why)?' '+p.blocks.find(b=>b.why).why:'')};
   const reportSpeech=()=>`Flight surgeon report for ${c.name}, mission day ${day}, ${E.name}. Career dose ${fx(cum,0)} of 600 millisieverts. `+RK.map(k=>`${REG[k].name}, ${LV[A[k].lv]}`).join('. ')+'.';
   const readPanel=()=>tab==='fitness'?fitnessSpeech():tab==='report'?reportSpeech():tab==='trends'?statusText():tab==='log'?`Health log for ${c.name}. ${c.log.length} records. Most recent: ${[...c.log].sort((x,y)=>y.date.localeCompare(x.date))[0]?.note||'none'}`
-    :sel?(ptab==='guide'?`${REG[sel].name}. ${GUIDE[sel].ov} ${GUIDE[sel].fn} ${GUIDE[sel].how}`:regionText(sel,true)):advise();
+    :sel?(ptab==='guide'?`${REG[sel].name}. ${GUIDE[sel].ov} ${GUIDE[sel].fn} ${GUIDE[sel].how}`:regionText(sel)):advise();
   /* an alert reads itself aloud, so it works hands-free */
   const uKey=urgent?urgent.k+urgent.d.id:'';
   useEffect(()=>{if(urgent)say(`Alert. ${REG[urgent.k].name}. ${DR[urgent.d.id].issue}. `+urgent.acts.map((q,i)=>`${i+1}. ${q}`).join('. ')+'. Say acknowledge when you have read this.')},[uKey]);
 
   const Sw=(on,fn,label)=><button className="sw" aria-pressed={on} onClick={fn}><i/>{label}</button>;
   const a=sel&&A[sel],r=sel&&REG[sel];
-  const acts=sel?(a.drivers.length&&a.lv>=1?topActs(a,4):r.keep):[];
 
   const go=k=>{setTab(k);setMenu(false)};
-  return <div className="app">
+  return <><div className={'app'+(intro==='enter'?' entering':'')}>
    <header className="top">
     <button className="ghost menu" aria-label="Menu" aria-expanded={menu} onClick={()=>setMenu(x=>!x)}><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg></button>
-    <h1>RADSHIELD<span>-MD</span></h1>
+    <h1>BIODECK</h1>
     <span style={{flex:1}}/>
-    <select aria-label="Crew member" value={crewId} onChange={e=>setCrewId(e.target.value)}>{crew.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}</select>
+    <select aria-label="Crew member" value={crewId} onChange={e=>setCrewId(e.target.value)}>{crew.map(x=><option key={x.id} value={x.id}>{x.name}{base[x.id]?'':' · baseline needed'}</option>)}</select>
+    {!base[crewId]&&<button className="btn sm" style={{borderColor:'var(--drift)',color:'var(--drift)'}} aria-label={'Baseline needed for '+c.name+': take it now'} onClick={()=>setBIntro(true)}>Baseline needed</button>}
     <button className="btn sm pri" aria-label="Start check-in" onClick={()=>setCheckin(0)}><span className="wide">Start&nbsp;</span>check-in</button>
     <div className="a11ywrap">
      <button className="ghost" aria-label="Accessibility" aria-expanded={a11y} aria-controls="a11y" onClick={()=>setA11y(x=>!x)}>
@@ -1174,7 +1349,7 @@ function App(){
       <hr/>
       {Sw(large,()=>setLarge(x=>!x),'Large text')}{Sw(scan,()=>setScan(x=>!x),'1-switch scan (Space)')}{Sw(voice,()=>setVoice(x=>!x),'Voice commands')}
       {Sw(speakOn,()=>{if(speakOn){hush();setSpeakOn(false)}else{setSpeakOn(true);speakRef.current=true;say('Hello, my name is '+PERSONAS[persona].n+'. You can choose my voice from the list.')}},'Speak replies')}
-      {speakOn&&<label className="row sub sp" style={{flexWrap:'nowrap'}}>Voice<select aria-label="Assistant voice" style={{width:'auto',minHeight:36,padding:'4px 8px'}} value={persona} onChange={e=>pickVoice(+e.target.value)}>{PERSONAS.map((p,i)=><option key={p.n} value={i}>{p.n}</option>)}</select></label>}
+      {speakOn&&<label className="row sub sp" style={{flexWrap:'nowrap'}}>Voice<select aria-label="Assistant voice" style={{width:'auto',minHeight:36,padding:'4px 8px'}} value={persona} onChange={e=>pickVoice(+e.target.value)}>{PERSONAS.map((p,i)=><option key={p.n} value={i}>{p.n}: {p.desc}</option>)}</select><button className="btn sm" onClick={preview} aria-label={'Preview voice '+PERSONAS[persona].n}>Preview</button></label>}
      </div>
     </div>
    </header>
@@ -1188,6 +1363,10 @@ function App(){
      <dt>Career dose</dt><dd className="mono">{fx(cum,0)} / {LIMIT} mSv</dd>
      <dt>Dose rate here</dt><dd className={'mono '+(eff>=5?'c3':rising?'c2':'')}>{fx(eff,2)} mSv/day</dd>
     </dl>
+    <details className="sec"><summary><span className="lbl">Personal baseline</span></summary><div>
+      {base[crewId]?<p className="sub" style={{marginTop:0}}>Taken {base[crewId].date} (mission day {base[crewId].day}){base[crewId].values.et?', with eye test':', no eye test'}. Readings are compared with it to catch slow drift.</p>
+       :<p className="sub" style={{marginTop:0}}>No baseline yet for {c.name}. Drift is only checked against population ranges.</p>}
+      <button className="btn sm full" onClick={base[crewId]?retakeBase:startBase}>{base[crewId]?'Retake baseline':'Take baseline'}</button></div></details>
     <details className="sec"><summary><span className="lbl">Environment</span></summary>
       <div style={{display:'grid',gap:6}}>{Object.entries(ENVS).map(([k,e])=><button key={k} className="btn sm full" aria-label={e.name} aria-pressed={env===k} onClick={()=>{setEnv(k);setRateMan(null)}}>{e.name}<span className="sub" style={{float:'right',fontWeight:400}}>{e.g}</span></button>)}</div></details>
     <details className="sec"><summary><span className="lbl">NASA's five hazards</span></summary>
@@ -1236,7 +1415,7 @@ function App(){
        <div className="anat inset" data-sel={sel} style={Object.fromEntries(RK.map(k=>['--c-'+k,LVC[A[k].lv]]))} role="img" aria-label={'Close-up illustration: '+r.name}>
         <svg viewBox={CROP[sel]} preserveAspectRatio="xMidYMid meet"><g dangerouslySetInnerHTML={ANAT}/></svg></div>
        <div className="seg" role="group" aria-label="Panel view" style={{width:'100%'}}>
-        <button style={{flex:1}} aria-pressed={ptab==='status'} onClick={()=>setPtab('status')}>Status and actions</button>
+        <button style={{flex:1}} aria-pressed={ptab==='status'} onClick={()=>setPtab('status')}>Status</button>
         <button style={{flex:1}} aria-pressed={ptab==='guide'} onClick={()=>setPtab('guide')}>Anatomy guide</button></div>
        {ptab==='guide'?<div style={{marginTop:14}}><Guide k={sel}/></div>:<div>
        <p style={{margin:'12px 0 4px',fontSize:'.9rem'}}>{r.why}</p>
@@ -1261,29 +1440,30 @@ function App(){
          <button className="btn sm" onClick={fetchWx} disabled={wx.loading}>{wx.loading?'Fetching…':'Fetch live NASA DONKI data'}</button></div>}
 
        {r.fields.length>0&&<div><hr/><span className="lbl">Self-check · move a slider to test</span>{r.fields.map(k=><Field key={k} k={k} v={v} set={set}/>)}</div>}
-       {sel==='mind'&&<div><hr/><ReactionTest onDone={ms=>{set('rt',ms);toast('Reaction time '+ms+' ms recorded.')}}/><hr/><EyeCard et={v.et} open={()=>setEtOpen({sim:null})} clear={()=>set('et',null)}/></div>}
+       {sel==='mind'&&<div><hr/><EyeCard et={v.et} open={()=>setEtOpen({sim:null})} clear={()=>set('et',null)}/></div>}
        {sel==='eyes'&&<div><hr/><PhotoCheck kind="eyes" val={photo.eyes} set={x=>setPhotos(s=>({...s,[crewId]:{...photo,eyes:x}}))}/></div>}
-       <hr/><span className="lbl">{a.lv>=1?'Suggested actions':'Keep it this way'} · tick when done</span>
-       {acts.map(t=>{const key=crewId+sel+t;return <label key={key} className={'chk '+(done[key]?'done':'')}><input type="checkbox" checked={!!done[key]} onChange={e=>setDone(d=>({...d,[key]:e.target.checked}))}/>{t}</label>})}
-       {r.ind&&<div><hr/><span className="lbl">{r.ind.l} trend ({r.ind.u.trim()})</span><Chart h={130} data={trend(sel)} yMin={r.ind.min||0} yMax={r.ind.max} band={r.ind.band} lines={[{k:'v',c:'var(--acc)',n:r.ind.l}]} title={r.ind.l+' trend'}/></div>}
+       {r.ind&&<div><hr/><span className="lbl">{r.ind.l} trend ({r.ind.u.trim()})</span><Chart h={130} data={trend(sel)} yMin={r.ind.min||0} yMax={r.ind.max} band={r.ind.band} lines={[{k:'v',c:'var(--acc)',n:r.ind.l,u:r.ind.u}]} title={r.ind.l+' trend'}/></div>}
        </div>}
        <div style={{marginTop:12}}><button className="btn sm" onClick={()=>setSel(null)}>Back to all systems</button></div>
      </div>}
    </div>}
 
    {tab==='trends'&&<div className="cols">
-     <div className="card"><h3>Career radiation dose vs 600 mSv limit</h3><Chart data={series} yMax={650} limit={{v:LIMIT,l:'NASA career limit 600 mSv'}} lines={[{k:'cum',c:'var(--acc)',n:'Cumulative dose (mSv)'}]} title="Cumulative dose"/></div>
+     <div className="card"><h3>Career radiation dose vs 600 mSv limit</h3><Chart data={series} yMax={650} limit={{v:LIMIT,l:'NASA career limit 600 mSv'}} lines={[{k:'cum',c:'var(--acc)',n:'Cumulative dose (mSv)',u:'mSv',dp:1}]} title="Cumulative dose"/></div>
      <div className="card"><h3>Radiation damage vs active DNA repair</h3><Chart data={series} yMax={40} lines={[{k:'dmg',c:'var(--alert)',n:'Damage index'},{k:'rep',c:'var(--ok)',dash:'6 4',n:'Repair capacity (sleep, nutrition)'}]} title="Damage versus repair"/></div>
-     {RK.filter(k=>REG[k].ind).map(k=>{const I=REG[k].ind;return <div className="card" key={k}><div className="row sp"><h3 style={{margin:0}}>{REG[k].name}: {I.l.toLowerCase()}</h3><Badge lv={A[k].lv}/></div><Chart h={140} data={trend(k)} yMin={I.min||0} yMax={I.max} band={I.band} lines={[{k:'v',c:'var(--acc)',n:`${I.l} (${I.u.trim()})`}]} title={I.l}/></div>})}
+     {RK.filter(k=>REG[k].ind).map(k=>{const I=REG[k].ind;return <div className="card" key={k}><div className="row sp"><h3 style={{margin:0}}>{REG[k].name}: {I.l.toLowerCase()}</h3><Badge lv={A[k].lv}/></div><Chart h={140} data={trend(k)} yMin={I.min||0} yMax={I.max} band={I.band} lines={[{k:'v',c:'var(--acc)',n:`${I.l} (${I.u.trim()})`,u:I.u}]} title={I.l}/></div>})}
    </div>}
    {tab==='log'&&<HealthLog c={c} setCrew={setCrew} checkins={checkins.filter(x=>x.crewId===crewId)}/>}
    {tab==='fitness'&&<Fitness c={c} A={A} tags={tags} sheltering={eff>5||(!!spe)} gp={gp} setGp={setGp} sess={sess} setSess={setSess} toast={toast} setEx={m=>set('ex',m)} day={day}/>}
    {tab==='report'&&<Report report={report} c={c}/>}
    </main>
 
-   {checkin!==null&&<CheckIn step={checkin} setStep={setCheckin} v={v} set={set} A={A} onSave={()=>{const e={crewId,day,at:new Date().toISOString(),v:{...v},status:Object.fromEntries(RK.map(k=>[k,LV[A[k].lv]]))};setCheckins(x=>[...x,e]);setCheckin(null);toast('Check-in saved for '+c.name+'.')}}/>}
+   {bIntro&&!intro&&checkin===null&&!etOpen&&<BaselineIntro name={c.name} onStart={startBase} onLater={laterBase}/>}
+   {checkin!==null&&<CheckIn step={checkin} setStep={s=>{setCheckin(s);if(s===null)setCiBase(false)}} v={v} set={set} A={A} title={ciBase?'Baseline test':'Daily check-in'} onSave={()=>{const e={crewId,day,at:new Date().toISOString(),v:{...v},status:Object.fromEntries(RK.map(k=>[k,LV[A[k].lv]]))};setCheckins(x=>[...x,e]);setCheckin(null);
+     if(ciBase){setCiBase(false);setBase(s=>({...s,[crewId]:{date:new Date().toISOString().slice(0,10),day,values:{...v,et:null}}}));toast('Baseline saved for '+c.name+'. Now the eye-tracking part: close it to skip.');setEtBase(true);setEtOpen({sim:null})}
+     else toast('Check-in saved for '+c.name+'.')}}/>}
 
-   {etOpen&&<EyeTest sim={etOpen.sim} auto={scan} onClose={()=>setEtOpen(null)} onDone={r=>{set('et',r);toast('Eye-tracking result recorded: fatigue signs '+ET_LVL[r.level]+'.')}}/>}
+   {etOpen&&<EyeTest sim={etOpen.sim} auto={scan} onClose={()=>{setEtOpen(null);setEtBase(false)}} onDone={r=>{set('et',r);logEt(crewId,r);if(etBase)setBase(s=>s[crewId]?{...s,[crewId]:{...s[crewId],values:{...s[crewId].values,et:r}}}:s);toast('Eye-tracking result recorded and added to the health log: fatigue signs '+ET_LVL[r.level]+'.')}}/>}
 
    {urgent&&<div className="hzwrap" role="alertdialog" aria-modal="true" aria-labelledby="hzt"><div className="hz"><div className="stripe"/><div className="in">
      <div className="tag"><Shape lv={3} size={18}/>ALERT · {REG[urgent.k].name.toUpperCase()}</div>
@@ -1294,31 +1474,63 @@ function App(){
    </div><div className="stripe"/></div></div>}
    <Warp k={tab==='monitor'?warpN:0}/>
    <div className="toasts" aria-live="polite">{toasts.map(t=><div key={t.id} className="toast">{t.m}</div>)}</div>
+  </div>{(intro===true||intro==='out')&&<Intro leaving={intro==='out'} onEnter={enterApp}/>}</>}
+
+/* ================= intro screen ================= */
+const STARS=[0,1,2].map(l=>Array.from({length:70},(_,i)=>{const r=rnd(i*3.1+l*91.7),q=rnd(i*7.3+l*13.9);return `${Math.round(r*2000-1000)}px ${Math.round(q*1400-700)}px 0 ${l?0:.5}px rgba(255,255,255,${(.35+l*.2).toFixed(2)})`}).join(','));
+function Intro({leaving,onEnter}){const done=useRef(false),btn=useRef();
+  const go=useCallback(()=>{if(done.current)return;done.current=true;onEnter()},[onEnter]);
+  useEffect(()=>{const t=setTimeout(go,5200),k=e=>{if(['Enter',' ','Escape'].includes(e.key)){e.preventDefault();go()}};
+    window.addEventListener('keydown',k);if(btn.current)btn.current.focus();return()=>{clearTimeout(t);window.removeEventListener('keydown',k)}},[go]);
+  return <div className={'intro'+(leaving?' out':'')} onClick={go} role="dialog" aria-modal="true" aria-label="BioDeck">
+   {STARS.map((sh,i)=><i key={i} className={'intro-stars l'+i} style={{boxShadow:sh}}/>)}
+   <div className="intro-core">
+    <svg className="intro-orbits" viewBox="0 0 400 400" aria-hidden="true">
+     <g className="o1"><ellipse cx="200" cy="200" rx="180" ry="180" /><circle cx="380" cy="200" r="5" className="pl a"/></g>
+     <g className="o2"><ellipse cx="200" cy="200" rx="140" ry="140" /><circle cx="60" cy="200" r="4" className="pl b"/></g>
+     <g className="o3"><ellipse cx="200" cy="200" rx="100" ry="100" /><circle cx="200" cy="100" r="3.5" className="pl c"/></g>
+     <circle cx="200" cy="200" r="66" className="disc"/>
+     <path className="pulse" d="M142 204h22l9-22 14 46 12-60 13 50 8-14h38"/>
+    </svg>
+    <h1 className="intro-t" aria-label="BioDeck">{'BIODECK'.split('').map((ch,i)=><span key={i} style={{animationDelay:(.5+i*.08)+'s'}} aria-hidden="true">{ch}</span>)}</h1>
+    <p className="intro-s">Crew health awareness · seven systems · one glance</p>
+   </div>
+   <div className="intro-go"><button ref={btn} className="btn pri" onClick={e=>{e.stopPropagation();go()}}>Begin mission</button>
+    <span className="sub">Press Enter or tap anywhere</span><div className="intro-bar"><i/></div></div>
   </div>}
 
 /* ================= check-in flow ================= */
 const STEPS=[['How is your mind?',['mood','stress','fatigue','sleep']],['How is your body?',['hr','temp','nausea','blur']],['Fuel and movement',['water','cal','antiox','ex']]];
-function CheckIn({step,setStep,v,set,A,onSave}){const last=step===STEPS.length;
-  return <div className="modal" role="dialog" aria-modal="true" aria-label="Daily check-in"><div className="card">
-   <div className="row sp"><span className="lbl">Daily check-in · step {step+1} of {STEPS.length+1}</span><button className="btn sm" onClick={()=>setStep(null)}>Close</button></div>
+function BaselineIntro({name,onStart,onLater}){const dlg=useDialogFocus();
+  return <div className="modal" role="dialog" aria-modal="true" aria-labelledby="blt"><div className="card" ref={dlg} tabIndex={-1}>
+   <span className="lbl">First use · {name}</span>
+   <h2 id="blt" style={{fontSize:'1.2rem',margin:'10px 0'}}>Baseline test</h2>
+   <p className="sub">Record what normal looks like for you: the three check-in pages, then the eye-tracking test. Every later reading is compared with this, so slow changes that still look normal for most people are caught early.</p>
+   <p className="sub">Take it when you are rested and feeling well.</p>
+   <div className="row sp" style={{marginTop:14}}><button className="btn" onClick={onLater}>Later</button><button className="btn pri" data-switch onClick={onStart}>Start baseline</button></div>
+  </div></div>}
+function CheckIn({step,setStep,v,set,A,onSave,title='Daily check-in'}){const last=step===STEPS.length;
+  return <div className="modal" role="dialog" aria-modal="true" aria-label={title}><div className="card">
+   <div className="row sp"><span className="lbl">{title} · step {step+1} of {STEPS.length+1}</span><button className="btn sm" onClick={()=>setStep(null)}>Close</button></div>
    <div className="steps">{[0,1,2,3].map(i=><i key={i} className={i<=step?'on':''}/>)}</div>
    {!last?<div><h2 style={{fontSize:'1.2rem',margin:'10px 0'}}>{STEPS[step][0]}</h2>{STEPS[step][1].map(k=><Field key={k} k={k} v={v} set={set} pre="ci"/>)}</div>
    :<div><h2 style={{fontSize:'1.2rem',margin:'10px 0'}}>Your status today</h2>
      <table><tbody>{RK.map(k=><tr key={k}><td>{REG[k].name}</td><td className="sub">{A[k].drivers[0]&&A[k].lv>0?DR[A[k].drivers[0].id].l:''}</td><td style={{textAlign:'right'}}><Badge lv={A[k].lv}/></td></tr>)}</tbody></table></div>}
-   <div className="row sp" style={{marginTop:14}}><button className="btn" disabled={step===0} onClick={()=>setStep(step-1)}>Back</button>{last?<button className="btn pri" onClick={onSave}>Save check-in</button>:<button className="btn pri" onClick={()=>setStep(step+1)}>Next</button>}</div>
+   <div className="row sp" style={{marginTop:14}}><button className="btn" disabled={step===0} onClick={()=>setStep(step-1)}>Back</button>{last?<button className="btn pri" onClick={onSave}>{title==='Baseline test'?'Save baseline':'Save check-in'}</button>:<button className="btn pri" onClick={()=>setStep(step+1)}>Next</button>}</div>
   </div></div>}
 
 /* ================= health log ================= */
 function HealthLog({c,setCrew,checkins}){
   const [f,setF]=useState({date:new Date().toISOString().slice(0,10),tag:'other',note:''});
   const up=fn=>setCrew(cs=>cs.map(x=>x.id===c.id?{...x,log:fn(x.log)}:x));
-  const rows=[...c.log].sort((a,b)=>b.date.localeCompare(a.date));
+  const rows=[...c.log].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
   return <div className="split log">
-   <div className="card"><h2 style={{fontSize:'1.15rem'}}>{c.name}</h2><div className="sub">{c.role} · age {c.age} · lifetime medical record · career dose before this mission {c.prior} mSv</div>
+   <div className="card"><h2 style={{fontSize:'1.15rem'}}>{c.name}</h2><div className="sub">{c.role}{c.age!=null?' · age '+c.age:''} · lifetime medical record · career dose before this mission {c.prior} mSv</div>
     <table style={{marginTop:12}}><thead><tr><th>Date</th><th>Type</th><th>Record</th><th></th></tr></thead><tbody>
      {rows.map(e=><tr key={e.id}><td className="mono" style={{whiteSpace:'nowrap'}}>{e.date}</td><td><span className="chip">{TAGS[e.tag]}</span></td><td>{e.note}</td><td><button className="btn sm" onClick={()=>up(l=>l.filter(x=>x.id!==e.id))}>Remove</button></td></tr>)}
     </tbody></table>
-    {checkins.length>0&&<div><hr/><span className="lbl">Mission check-ins</span><table><tbody>{checkins.map((x,i)=><tr key={i}><td className="mono">Day {x.day}</td><td>{Object.entries(x.status).filter(([k,s])=>s!=='OK').map(([k,s])=>REG[k].name+' '+s).join(', ')||'All systems OK'}{x.v&&x.v.et?` · Eye-tracking test: fatigue signs ${ET_LVL[x.v.et.level]} (blink ${x.v.et.blink}/min, eyes closed ${x.v.et.perclos}%)`:''}</td></tr>)}</tbody></table></div>}</div>
+    {!rows.length&&<p className="sub">No records yet.</p>}
+    {checkins.length>0&&<div><hr/><span className="lbl">Mission check-ins</span><table><tbody>{checkins.map((x,i)=><tr key={i}><td className="mono">Day {x.day}</td><td>{Object.entries(x.status).filter(([k,s])=>s!=='STABLE').map(([k,s])=>REG[k].name+' '+s).join(', ')||'All systems stable'}{x.v&&x.v.et?` · Eye-tracking test: fatigue signs ${ET_LVL[x.v.et.level]} (blink ${x.v.et.blink}/min, eyes closed ${x.v.et.perclos}%)`:''}</td></tr>)}</tbody></table></div>}</div>
    <div className="card right"><h3>Add a record</h3>
     <div className="field"><label htmlFor="ld">Date</label><input id="ld" type="date" value={f.date} onChange={e=>setF({...f,date:e.target.value})}/></div>
     <div className="field"><label htmlFor="lt">Type</label><select id="lt" value={f.tag} onChange={e=>setF({...f,tag:e.target.value})}>{Object.entries(TAGS).map(([k,t])=><option key={k} value={k}>{t}</option>)}</select></div>
@@ -1327,45 +1539,176 @@ function HealthLog({c,setCrew,checkins}){
     <p className="sub">Records here feed the body-system status and each astronaut's workout plan and goals.</p></div></div>}
 
 /* ================= fitness ================= */
+/* fitness game: XP is banked when a session is logged (once per mission day) or a goal result is logged */
+const RANKS=[[0,'Cadet'],[150,'Trainee'],[400,'Flight Ready'],[750,'Orbiter'],[1200,'Spacewalker'],[1800,'Lunar Ace'],[2600,'Mars Pioneer'],[3600,'Deep-Space Legend']];
+const XP={ex:10,block:25,session:50,goal:20,reach:100};
+const BADGES=[
+ {id:'first',n:'Liftoff',d:'Log your first session',i:'🚀'},
+ {id:'perfect',n:'Full Stack',d:'Tick every exercise in a session',i:'✅'},
+ {id:'streak3',n:'In Orbit',d:'3 mission days in a row',i:'🔥'},
+ {id:'streak7',n:'Long Haul',d:'7 mission days in a row',i:'🌌'},
+ {id:'ten',n:'Ten Down',d:'Log 10 sessions',i:'🔟'},
+ {id:'storm',n:'Storm Rider',d:'Finish a shelter circuit',i:'☢️'},
+ {id:'rest',n:'Listened to My Body',d:'Log a rest day when unwell',i:'🛌'},
+ {id:'goal',n:'Target Hit',d:'Reach a health-log goal',i:'🎯'},
+];
+const rankOf=xp=>{let i=0;RANKS.forEach(([t],j)=>{if(xp>=t)i=j});return i};
+const streakOf=(days,day)=>{const S=new Set(days);let d=S.has(day)?day:day-1,n=0;while(S.has(d)){n++;d--}return n};
 function Fitness({c,A,tags,sheltering,gp,setGp,sess,setSess,toast,setEx,day}){
   const plan=useMemo(()=>buildRoutine(A,tags,sheltering),[A,tags,sheltering]);
   const total=plan.blocks.reduce((a,b)=>a+b.min,0),issues=RK.filter(k=>A[k].lv>=1);
   const goals=tags.filter(t=>GOALDEFS[t]).map(t=>GOALDEFS[t]);if(!goals.length)goals.push(GOALDEFS.cardio);
-  const [inp,setInp]=useState({});
+  const [inp,setInp]=useState({}),[openB,setOpenB]=useState(null),[stepsOpen,setStepsOpen]=useState({});
   const key=g=>c.id+'_'+g.id,cur=g=>gp[key(g)]?.v??g.start;
-  const logGoal=g=>{const x=parseFloat(inp[g.id]);if(isNaN(x))return;const was=cur(g)>=g.target;setGp(p=>({...p,[key(g)]:{v:x}}));setInp(i=>({...i,[g.id]:''}));if(!was&&x>=g.target)toast(`Goal reached: ${g.label}, ${g.target} ${g.unit}. Well done, ${c.name}.`)};
-  return <div className="split">
-   <div className="card">
-    <div className="row sp"><div><h2 style={{fontSize:'1.15rem',margin:0}}>Today's session for {c.name}</h2><span className="sub">{total} minutes · rebuilt whenever health status changes</span></div>{plan.rest&&<Badge lv={2}/>}</div>
-    <p className="sub" style={{margin:'8px 0 0'}}>{issues.length?'Adjusted for: '+issues.map(k=>`${REG[k].name} (${LV[A[k].lv]})`).join(', ')+'.':'No current issues. Standard maintenance session.'}</p>
-    {plan.blocks.map((b,bi)=><div key={b.t}><hr/><div className="row sp"><b>{b.t}</b><span className="chip mono">{b.min} min</span></div>
-      {b.why&&<p className="note" style={{margin:'8px 0'}}>{b.why}</p>}
-      <table><tbody>{b.items.map(([n,d],i)=>{const k=c.id+b.t+n;return <tr key={n}><td style={{width:28}}><input type="checkbox" aria-label={'Done: '+n} style={{width:18,height:18,accentColor:'var(--acc)'}} checked={!!sess[k]} onChange={e=>setSess(s=>({...s,[k]:e.target.checked}))}/></td><td>{n}</td><td className="mono" style={{textAlign:'right'}}>{d}</td></tr>})}</tbody></table></div>)}
-    <hr/><button className="btn pri" onClick={()=>{setEx(Math.min(180,Math.round(total/10)*10));toast(`Session logged: ${total} minutes of exercise today.`)}}>Log session complete</button>
-    <p className="sub" style={{marginBottom:0}}>Device names follow station practice (resistive exercise device, treadmill, cycle ergometer). Stop if you feel pain or dizziness.</p>
-   </div>
-   <div className="right"><div className="card"><h3>Goals from the health log</h3><p className="sub" style={{margin:0}}>You are notified when a goal is reached. If you fall behind, the weekly steps are recalculated from where you are.</p></div>
+  const logGoal=g=>{const x=parseFloat(inp[g.id]);if(isNaN(x))return;const was=cur(g)>=g.target;setGp(p=>({...p,[key(g)]:{v:x}}));setInp(i=>({...i,[g.id]:''}));const reached=!was&&x>=g.target;if(reached)toast(`Goal reached: ${g.label}, ${g.target} ${g.unit}. Well done, ${c.name}. +${XP.reach} XP`);award(XP.goal+(reached?XP.reach:0),reached?['goal']:[])};
+  /* personal changes: colour by the body system's status; health-log changes use the accent colour */
+  const srcLv=x=>x.k==='log'?-1:A[x.k].lv,srcCol=x=>x.k==='log'?'var(--acc)':LVC[Math.max(1,A[x.k].lv)];
+  const srcName=x=>x.k==='log'?x.l+' (health log)':REG[x.k].name,mods=plan.blocks.flatMap((b,bi)=>(b.src||[]).map(x=>({...x,bi,t:b.t})));
+  const ik=(b,n)=>c.id+b.t+n,doneIn=b=>b.items.filter(([n])=>sess[ik(b,n)]).length;
+  const nItems=plan.blocks.reduce((a,b)=>a+b.items.length,0),nDone=plan.blocks.reduce((a,b)=>a+doneIn(b),0);
+  const firstOpen=plan.blocks.findIndex(b=>doneIn(b)<b.items.length),shown=openB??firstOpen;
+  const [game,setGame]=useState(()=>load('rs2_fitgame',{})),[pop,setPop]=useState(0);useEffect(()=>save('rs2_fitgame',game),[game]);
+  const me=game[c.id]||{xp:0,days:[],sessions:0,badges:[]},ri=rankOf(me.xp),next=RANKS[ri+1],lvPct=next?(me.xp-RANKS[ri][0])/(next[0]-RANKS[ri][0])*100:100;
+  const blocksDone=plan.blocks.filter(b=>doneIn(b)===b.items.length).length,todayXp=nDone*XP.ex+blocksDone*XP.block+XP.session,loggedToday=me.days.includes(day),streak=streakOf(me.days,day);
+  const award=(gain,newBadges=[],extra={})=>{const nb=newBadges.filter(b=>!me.badges.includes(b)),xp=me.xp+gain,up=rankOf(xp)>ri;
+    setGame(g=>({...g,[c.id]:{...me,...extra,xp,badges:[...me.badges,...nb]}}));setPop(n=>n+1);
+    if(up)setTimeout(()=>toast(`Rank up! ${c.name} is now ${RANKS[rankOf(xp)][1]}.`),400);
+    nb.forEach((b,i)=>setTimeout(()=>{const B=BADGES.find(x=>x.id===b);toast(`Badge unlocked: ${B.i} ${B.n}. ${B.d}.`)},800+i*500))};
+  const logSession=()=>{setEx(Math.min(180,Math.round(total/10)*10));
+    if(loggedToday){toast(`Session updated: ${total} minutes. XP for mission day ${day} is already banked.`);return}
+    const days=[...me.days,day],st=streakOf(days,day),sessions=me.sessions+1,b=['first'];
+    if(nItems&&nDone===nItems)b.push('perfect');if(st>=3)b.push('streak3');if(st>=7)b.push('streak7');if(sessions>=10)b.push('ten');
+    if(plan.rest)b.push('rest');if(plan.blocks[0].t.startsWith('Shelter')&&nDone===nItems)b.push('storm');
+    toast(`Session logged: ${total} minutes. +${todayXp} XP${st>1?` · ${st}-day streak`:''}.`);award(todayXp,b,{days,sessions})};
+  return <><section className="card fit-hero" aria-label="Fitness progress">
+   <div className="fit-rank" key={'r'+ri}><svg viewBox="0 0 48 48" width="56" height="56" aria-hidden="true"><path d="M24 3l5.6 11.4 12.6 1.8-9.1 8.9 2.1 12.5L24 31.7l-11.2 5.9 2.1-12.5-9.1-8.9 12.6-1.8z" fill="var(--acc)" opacity=".18" stroke="var(--acc)" strokeWidth="2" strokeLinejoin="round"/></svg><b className="mono">{ri+1}</b></div>
+   <div className="fit-lv"><span className="lbl">Rank {ri+1} of {RANKS.length}</span><b className="fit-rn">{RANKS[ri][1]}</b>
+    <div className="fit-xpbar" aria-label={next?`${me.xp} of ${next[0]} XP to ${next[1]}`:'Top rank reached'}><i key={pop} style={{width:lvPct+'%'}}/></div>
+    <span className="sub mono">{me.xp} XP{next?` · ${next[0]-me.xp} to ${next[1]}`:' · top rank'}</span></div>
+   <div className="fit-kpis">
+    <div className={'fit-kpi'+(streak?' hot':'')}><span aria-hidden="true">🔥</span><b className="mono">{streak}</b><span className="sub">day streak</span></div>
+    <div className="fit-kpi"><span aria-hidden="true">⚡</span><b className="mono">{loggedToday?'✓':'+'+todayXp}</b><span className="sub">{loggedToday?'banked today':'XP on offer'}</span></div>
+    <div className="fit-kpi"><span aria-hidden="true">🏅</span><b className="mono">{me.badges.length}/{BADGES.length}</b><span className="sub">badges</span></div>
+   </div></section>
+  <div className="split fit">
+   <section className="card fit-s" aria-label="Today's session">
+    <div className="row sp" style={{alignItems:'flex-start'}}>
+     <div><span className="lbl">Today's session</span><h2>{plan.rest?'Rest day':total+' min'}<span className="sub"> · {c.name}</span></h2></div>
+     <div className="fit-prog" aria-label={`${nDone} of ${nItems} exercises done`}><b className="mono">{nDone}/{nItems}</b><span className="sub">done</span></div>
+    </div>
+    <div className="meter" style={{margin:'10px 0 12px'}}><i style={{width:(nItems?nDone/nItems*100:0)+'%',background:'var(--acc)'}}/></div>
+    <div className={'fit-me'+(mods.length?'':' std')}>
+     <div className="row sp"><span className="fit-me-h"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 20 12 16.6 6.5 20 8 13.4 3 9l6.4-.7z" fill="currentColor"/></svg>{mods.length?'Built for you today':'Standard session today'}</span>{mods.length>0&&<span className="sub mono">{mods.length} change{mods.length>1?'s':''}</span>}</div>
+     {mods.length?<ul>{mods.map((x,i)=><li key={i} style={{'--mc':srcCol(x)}}><button onClick={()=>setOpenB(x.bi)} aria-label={`${srcName(x)}: ${x.c}. Open ${x.t}`}>
+       {x.k==='log'?<span className="fit-me-i" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z M14 3v5h5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinejoin="round"/></svg></span>:<Shape lv={Math.max(1,srcLv(x))} size={22}/>}
+       <span className="fit-me-t"><b>{srcName(x)}{x.k!=='log'&&<span className="fit-me-lv"> · {LV[A[x.k].lv]}</span>}</b><span>{x.c}</span></span>
+       <span className="fit-me-b sub">{x.t.split(':')[0]}</span></button></li>)}</ul>
+      :<p className="sub" style={{margin:'6px 0 0'}}>All systems stable and nothing in the health log needs changes. The plan adapts as soon as your status does.</p>}
+    </div>
+    <ol className="fit-blocks">{plan.blocks.map((b,bi)=>{const d=doneIn(b),all=d===b.items.length,open=shown===bi,id='fb'+bi;
+     const bs=b.src||[],bc=bs.length?srcCol(bs[0]):null;
+     return <li key={b.t} className={'fit-b'+(open?' open':'')+(all?' done':'')+(bs.length?' mine':'')} style={bc?{'--mc':bc}:null}>
+      <button className="fit-bh" aria-expanded={open} aria-controls={id} onClick={()=>setOpenB(open?-1:bi)}>
+       <span className="fit-n" aria-hidden="true">{all?<svg width="14" height="14" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" stroke="currentColor" strokeWidth="3.5" fill="none"/></svg>:bi+1}</span>
+       <span className="fit-bt"><b>{b.t}</b>{bs.length>0&&<span className="fit-for">{bs.map((x,i)=><span key={i} style={{'--mc':srcCol(x)}}>For {x.k==='log'?x.l.toLowerCase():REG[x.k].name.split(' ')[0]}</span>)}</span>}<span className="sub mono">{b.min} min · {d}/{b.items.length}{all?` · +${XP.block} XP`:''}</span></span>
+       <svg className="fit-chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round"/></svg>
+      </button>
+      {open&&<div id={id} className="fit-bb">
+       {b.why&&<p className={'fit-why'+(bs.length?' mine':'')}>{b.why}</p>}
+       {b.items.map(([n,dv])=>{const k=ik(b,n);return <label key={n} className={'fit-ex'+(sess[k]?' on':'')}>
+        <input type="checkbox" checked={!!sess[k]} onChange={e=>setSess(s=>({...s,[k]:e.target.checked}))}/>
+        <span className="fit-box" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" stroke="currentColor" strokeWidth="4" fill="none"/></svg></span>
+        <span className="fit-nm">{n}</span><span className="mono sub">{dv.trim()}</span><span className="fit-xp" aria-hidden="true">+{XP.ex}</span></label>})}
+       {!all&&bi<plan.blocks.length-1&&<button className="btn sm" style={{marginTop:8}} onClick={()=>{setSess(s=>{const o={...s};b.items.forEach(([n])=>o[ik(b,n)]=true);return o});setOpenB(null)}}>Mark block done</button>}
+      </div>}
+     </li>})}</ol>
+    <button className="btn pri" style={{width:'100%'}} onClick={logSession}>{loggedToday?'Update today\'s session':`Log session · +${todayXp} XP`}</button>
+    <p className="sub" style={{margin:'10px 0 0',fontSize:'.78rem'}}>Stop if you feel pain or dizziness. Device names follow station practice.</p>
+   </section>
+   <section className="right" aria-label="Goals">
+    <div style={{padding:'2px 4px 10px'}}><span className="lbl">Goals from your health log</span><p className="sub" style={{margin:'4px 0 0'}}>Log a result to update progress. Steps are recalculated if you fall behind.</p></div>
     {goals.map(g=>{const x=cur(g),ok=x>=g.target,pct=clamp((x-g.start)/(g.target-g.start)*100,0,100),exp=g.start+(g.target-g.start)*Math.min(1,day/42),behind=!ok&&day>=28&&x<exp-(g.target-g.start)*.1;
-     return <div className="card" key={g.id}><div className="row sp"><b>{g.label}</b>{ok?<span className="badge c0"><Shape lv={0} size={16}/>REACHED</span>:behind?<span className="badge c2"><Shape lv={2} size={16}/>BEHIND</span>:<span className="badge c0">ON TRACK</span>}</div>
-      <div className="sub">{g.why}</div>
-      <div className="row sp" style={{marginTop:8}}><b className="mono" style={{fontSize:'1.2rem'}}>{x} {g.unit}</b><span className="sub mono">goal {g.target}</span></div>
-      <div className="meter" style={{margin:'6px 0 10px'}}><i style={{width:pct+'%',background:'var(--acc)'}}/></div>
-      {!ok&&<div className="row" style={{gap:6,marginBottom:10}}><span className="sub">{behind?'Catch-up steps:':'Weekly steps:'}</span>{[1,2,3,4,5,6].map(w=><span key={w} className="chip mono">{Math.round((x+(g.target-x)*w/6)*10)/10}</span>)}</div>}
-      <div className="row" style={{flexWrap:'nowrap'}}><input type="number" step="any" placeholder={`New result (${g.unit})`} aria-label={'Log '+g.label} value={inp[g.id]||''} onChange={e=>setInp(i=>({...i,[g.id]:e.target.value}))}/><button className="btn" onClick={()=>logGoal(g)}>Log</button></div></div>})}
-   </div></div>}
+     return <div className="card fit-g" key={g.id}>
+      <div className="row sp"><b>{g.label}</b>{ok?<span className="fit-tag c0"><Shape lv={0} size={12}/>Reached</span>:behind?<span className="fit-tag c2"><Shape lv={2} size={12}/>Behind</span>:<span className="fit-tag">On track</span>}</div>
+      <div className="row" style={{alignItems:'baseline',gap:6,margin:'8px 0 6px'}}><b className="mono" style={{fontSize:'1.5rem'}}>{x}</b><span className="sub">/ {g.target} {g.unit}</span></div>
+      <div className="meter"><i style={{width:pct+'%',background:ok?'var(--ok)':behind?'var(--act)':'var(--acc)'}}/></div>
+      <form className="row" style={{flexWrap:'nowrap',gap:6,marginTop:10}} onSubmit={e=>{e.preventDefault();logGoal(g)}}><input type="number" step="any" placeholder={`New result (${g.unit})`} aria-label={'Log '+g.label} value={inp[g.id]||''} onChange={e=>setInp(i=>({...i,[g.id]:e.target.value}))}/><button className="btn sm">Log</button></form>
+      <div className="row sp" style={{marginTop:8}}><span className="sub" style={{fontSize:'.78rem'}}>{g.why}</span>
+       {!ok&&<button className="fit-link" aria-expanded={!!stepsOpen[g.id]} onClick={()=>setStepsOpen(s=>({...s,[g.id]:!s[g.id]}))}>{stepsOpen[g.id]?'Hide steps':(behind?'Catch-up':'Weekly')+' steps'}</button>}</div>
+      {!ok&&stepsOpen[g.id]&&<div className="row" style={{gap:6,marginTop:8}}>{[1,2,3,4,5,6].map(w=><span key={w} className="chip mono" title={'Week '+w}>W{w} {Math.round((x+(g.target-x)*w/6)*10)/10}</span>)}</div>}
+     </div>})}
+    <div className="card fit-badges"><div className="row sp"><span className="lbl">Badges</span><span className="sub mono">{me.badges.length} of {BADGES.length}</span></div>
+     <ul>{BADGES.map(B=>{const got=me.badges.includes(B.id);return <li key={B.id} className={got?'got':''} title={B.d}><span className="fit-bi" aria-hidden="true">{B.i}</span><b>{B.n}</b><span className="sub">{got?'Unlocked':B.d}</span></li>})}</ul></div>
+   </section></div></>}
 
 /* ================= surgeon report ================= */
-function Report({report,c}){const [json,setJson]=useState(false);
+function Report({report,c}){const [json,setJson]=useState(false),[copied,setCopied]=useState(false),[raw,setRaw]=useState(false);
   const text=useMemo(()=>{const r=report,L=[];L.push('FLIGHT SURGEON REPORT (SIMULATED DATA)','Awareness summary. Not a diagnosis.','',`Crew member : ${r.crew.name}, ${r.crew.role}`,`Mission day : ${r.missionDay}`,`Environment : ${r.environment}`,`Hazards on  : ${r.hazardsActive.join('; ')||'none'}`,'',
     'RADIATION',`  Career dose : ${r.radiation.careerDoseMSv} of ${r.radiation.limitMSv} mSv (${r.radiation.percentOfLimit}%)`,`  Rate now    : ${r.radiation.currentRateMSvPerDay} mSv/day in ${r.radiation.location}`,'','BODY SYSTEMS');
     r.systems.forEach(s=>L.push(`  ${s.system.padEnd(22)}${s.status.padEnd(7)}${s.drivers.slice(0,3).join('; ')}`));
-    L.push('','LATEST SELF-CHECK',`  Sleep ${r.latestInputs.sleep} h, stress ${r.latestInputs.stress}/5, mood ${r.latestInputs.mood}/5, fatigue ${r.latestInputs.fatigue}/5`,`  Pulse ${r.latestInputs.hr} bpm, temp ${r.latestInputs.temp} C, nausea ${r.latestInputs.nausea}/5, vision blur ${r.latestInputs.blur}/5`,`  Water ${r.latestInputs.water} L, food ${r.latestInputs.cal}% of plan, exercise ${r.latestInputs.ex} min`+(r.latestInputs.rt?`, reaction ${r.latestInputs.rt} ms`:''),...(r.latestInputs.et?[`  Eye tracking (webcam estimates): blink ${r.latestInputs.et.blink}/min, eyes closed ${r.latestInputs.et.perclos}%, longest closure ${r.latestInputs.et.longest} ms`+(r.latestInputs.et.lag!=null?`, gaze lag ${r.latestInputs.et.lag} ms`:'')+`; fatigue signs ${ET_LVL[r.latestInputs.et.level]}`]:[]),'',`Check-ins saved: ${r.checkIns}. Countermeasures completed: ${r.countermeasuresCompleted}. Cell repair score: ${r.repairScore}/100.`);return L.join('\n')},[report]);
+    L.push('','LATEST SELF-CHECK',`  Sleep ${r.latestInputs.sleep} h, stress ${r.latestInputs.stress}/5, mood ${r.latestInputs.mood}/5, fatigue ${r.latestInputs.fatigue}/5`,`  Pulse ${r.latestInputs.hr} bpm, temp ${r.latestInputs.temp} C, nausea ${r.latestInputs.nausea}/5, vision blur ${r.latestInputs.blur}/5`,`  Water ${r.latestInputs.water} L, food ${r.latestInputs.cal}% of plan, exercise ${r.latestInputs.ex} min`,...(r.latestInputs.et?[`  Eye tracking (webcam estimates): blink ${r.latestInputs.et.blink}/min, eyes closed ${r.latestInputs.et.perclos}%, longest closure ${r.latestInputs.et.longest} ms`+(r.latestInputs.et.lag!=null?`, gaze lag ${r.latestInputs.et.lag} ms`:'')+`; fatigue signs ${ET_LVL[r.latestInputs.et.level]}`]:[]),'',`Check-ins saved: ${r.checkIns}. Cell repair score: ${r.repairScore}/100.`);return L.join('\n')},[report]);
   const out=json?JSON.stringify(report,null,2):text;
-  const dl=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([out],{type:json?'application/json':'text/plain'}));a.download=`surgeon-report-day${report.missionDay}.${json?'json':'txt'}`;a.click()};
-  return <div className="card"><div className="row sp" style={{marginBottom:12}}><h2 style={{fontSize:'1.15rem',margin:0}}>Flight surgeon report: {c.name}</h2>
-    <div className="row"><div className="seg"><button aria-pressed={!json} onClick={()=>setJson(false)}>Plain text</button><button aria-pressed={json} onClick={()=>setJson(true)}>JSON</button></div>
-    <button className="btn" onClick={()=>navigator.clipboard&&navigator.clipboard.writeText(out)}>Copy</button><button className="btn pri" onClick={dl}>Download</button></div></div>
-   <pre className="mono">{out}</pre></div>}
+  const dl=fmt=>{const j=fmt==='json',body=j?JSON.stringify(report,null,2):text,a=document.createElement('a');a.href=URL.createObjectURL(new Blob([body],{type:j?'application/json':'text/plain'}));a.download=`surgeon-report-${report.crew.name.replace(/[^A-Za-z0-9]+/g,'-')}-day${report.missionDay}.${j?'json':'txt'}`;a.click()};
+  const copy=()=>{if(!navigator.clipboard)return;navigator.clipboard.writeText(text).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000)},()=>{})};
+  const sys=report.systems.map(x=>({...x,lv:LV.indexOf(x.status)})).sort((a,b)=>b.lv-a.lv||b.strain-a.strain);
+  const worst=sys[0].lv,flag=sys.filter(x=>x.lv>0),r=report.radiation,inp=report.latestInputs,et=inp.et;
+  const headline=flag.length?`${flag.length} of 7 systems need attention`:'All seven systems stable';
+  const lead=flag.length?`Start with ${flag[0].system}: ${flag[0].drivers.slice(0,2).join(' and ').toLowerCase()||'see below'}.`:'No drivers above threshold. Routine monitoring only.';
+  const stat=k=>{const F=FIELDS[k],u=F.u?F.u.trim():F.ends?'/ '+F.max:'';return <div className="rep-st" key={k}><span className="sub">{F.l}</span><b className="mono">{inp[k]}<small> {u}</small></b></div>};
+  return <article className="rep" aria-label={'Flight surgeon report for '+report.crew.name}>
+   <header className="card rep-head">
+    <div className="row sp" style={{alignItems:'flex-start'}}>
+     <div><span className="lbl">Flight surgeon report</span><h2>{report.crew.name}</h2>
+      <div className="row sub" style={{gap:8,marginTop:4}}><span>{report.crew.role}</span><span aria-hidden="true">·</span><span>Mission day {report.missionDay}</span><span aria-hidden="true">·</span><span>{report.environment}</span></div></div>
+     <div className="row rep-act" style={{gap:6}}>
+      <button className="btn sm" onClick={copy} aria-live="polite">{copied?'Copied':'Copy text'}</button>
+      <button className="btn sm" onClick={()=>window.print()}>Print</button>
+      <button className="btn sm pri" onClick={()=>dl('txt')}>Download</button></div>
+    </div>
+    <div className={'rep-sum c'+worst}><Shape lv={worst} size={26}/><div><b>{headline}</b><div className="sub">{lead}</div></div></div>
+    <p className="sub rep-note">Simulated data. Awareness summary for the flight surgeon, not a diagnosis.</p>
+   </header>
+
+   <section className="card"><h3>Body systems</h3>
+    <div className="rep-sys">{sys.map(x=><div key={x.system} className={'rep-tile'+(x.lv?' on':'')} style={{'--lc':LVC[x.lv]}}>
+     <div className="row sp" style={{flexWrap:'nowrap'}}><b>{x.system}</b><span className={'fit-tag c'+x.lv}><Shape lv={x.lv} size={12}/>{x.status}</span></div>
+     <div className="meter" style={{margin:'8px 0 6px'}} aria-label={`Strain ${x.strain} of 100`}><i style={{width:x.strain+'%',background:LVC[x.lv]}}/></div>
+     <div className="sub" style={{fontSize:'.78rem'}}>{x.drivers.length?x.drivers.slice(0,3).join(' · '):'Nothing notable'}</div></div>)}</div>
+   </section>
+
+   <div className="rep-two">
+    <section className="card"><h3>Radiation</h3>
+     <div className="row" style={{alignItems:'baseline',gap:6}}><b className="mono" style={{fontSize:'1.6rem'}}>{r.careerDoseMSv}</b><span className="sub">of {r.limitMSv} mSv career limit</span></div>
+     <div className="meter" style={{height:8,margin:'8px 0'}}><i style={{width:Math.min(100,r.percentOfLimit)+'%',background:r.percentOfLimit>=75?'var(--alert)':r.percentOfLimit>=50?'var(--act)':'var(--acc)'}}/></div>
+     <div className="row sp sub"><span>{r.percentOfLimit}% used</span><span className="mono">{r.currentRateMSvPerDay} mSv/day · {r.location}</span></div>
+     <div className="row" style={{gap:6,marginTop:12}}>{report.hazardsActive.length?report.hazardsActive.map(h=><span key={h} className="chip">{h}</span>):<span className="sub">No hazards switched on</span>}</div>
+    </section>
+    <section className="card"><h3>Recovery</h3>
+     <div className="rep-st big"><span className="sub">Cell repair score</span><b className="mono">{report.repairScore}<small> / 100</small></b></div>
+     <div className="meter" style={{height:8,margin:'8px 0'}}><i style={{width:report.repairScore+'%',background:report.repairScore<40?'var(--act)':'var(--ok)'}}/></div>
+     <div className="sub">Check-ins saved this session: <b className="mono">{report.checkIns}</b></div>
+    </section>
+   </div>
+
+   <section className="card"><h3>Latest self-check</h3>
+    <span className="lbl">Mind</span><div className="rep-grid">{['sleep','stress','mood','fatigue'].map(stat)}</div>
+    <span className="lbl">Body</span><div className="rep-grid">{['hr','temp','nausea','blur'].map(stat)}</div>
+    <span className="lbl">Fuel and movement</span><div className="rep-grid">{['water','cal','antiox','ex'].map(stat)}</div>
+    {et&&<><span className="lbl">Eye tracking · webcam estimates</span><div className="rep-grid">
+     <div className="rep-st"><span className="sub">Blink rate</span><b className="mono">{et.blink}<small> /min</small></b></div>
+     <div className="rep-st"><span className="sub">Eyes closed</span><b className="mono">{et.perclos}<small> %</small></b></div>
+     <div className="rep-st"><span className="sub">Longest closure</span><b className="mono">{et.longest}<small> ms</small></b></div>
+     <div className="rep-st"><span className="sub">Fatigue signs</span><b>{ET_LVL[et.level]}</b></div></div></>}
+   </section>
+
+   <section className="card rep-act">
+    <button className="rep-raw" aria-expanded={raw} onClick={()=>setRaw(x=>!x)}><span><b>Export data</b><span className="sub"> · plain text or JSON for the ground team</span></span><svg className="fit-chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style={{transform:raw?'rotate(180deg)':'none'}}><path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round"/></svg></button>
+    {raw&&<div style={{marginTop:12}}>
+     <div className="row sp" style={{marginBottom:10}}><div className="seg"><button aria-pressed={!json} onClick={()=>setJson(false)}>Plain text</button><button aria-pressed={json} onClick={()=>setJson(true)}>JSON</button></div>
+      <div className="row" style={{gap:6}}><button className="btn sm" onClick={()=>navigator.clipboard&&navigator.clipboard.writeText(out)}>Copy</button><button className="btn sm" onClick={()=>dl(json?'json':'txt')}>Download {json?'.json':'.txt'}</button></div></div>
+     <pre className="mono">{out}</pre></div>}
+   </section>
+  </article>}
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>

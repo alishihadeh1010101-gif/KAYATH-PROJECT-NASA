@@ -1,4 +1,4 @@
-// RadShield-MD API: zero-dependency Node server. Run: node server.mjs  (http://localhost:3001/api/v1)
+// BioDeck-MD API: zero-dependency Node server. Run: node server.mjs  (http://localhost:3001/api/v1)
 // Every response: { simulated: true, data } or { simulated: true, error: { code, message, details? } }
 import http from 'node:http';
 
@@ -173,4 +173,4 @@ http.createServer(async (req, res) => {
     const status = e.status || 500;
     send(status, { simulated: true, error: { code: e.code || 'internal_error', message: e.message, ...(e.details ? { details: e.details } : {}) } });
   }
-}).listen(3001, () => console.log('RadShield-MD API (simulated data) on http://localhost:3001/api/v1'));
+}).listen(3001, () => console.log('BioDeck-MD API (simulated data) on http://localhost:3001/api/v1'));
