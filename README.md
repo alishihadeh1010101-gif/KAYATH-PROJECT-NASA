@@ -3,7 +3,9 @@
 Crew health awareness console for the NASA Space Apps Challenge (Kayath Brothers). Simulated data only. An awareness tool, not a diagnosis tool.
 
 ## Run it
-Windows: double-click `Start-BioDeck.bat` and keep the window open. It serves the app at http://localhost:8765/BioDeck-MD.html. Use Edge or Chrome. The microphone and camera only keep their permission on `localhost`, not when the HTML is opened as a file.
+Online, nothing to install: https://alishihadeh1010101-gif.github.io/KAYATH-PROJECT-NASA/ (use Edge or Chrome, and allow the microphone and camera when asked).
+
+Offline on Windows: double-click `Start-BioDeck.bat` and keep the window open. It serves the app at http://localhost:8765/BioDeck-MD.html. Use Edge or Chrome. The microphone and camera only keep their permission on `localhost`, not when the HTML is opened as a file.
 
 ## Files
 - `BioDeck-MD.html`: the whole app (React via CDN, plain CSS, inline SVG anatomy). Sections: anatomy plate, on-device vision loader (`RSVision`), eye-test timeline and analysis (`EyeRun`), data, model (`assess`), themes, figure, tools (photo quality and camera), eye-tracking fatigue test, workout routine, `App`, check-in, health log, fitness, report.

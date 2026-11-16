@@ -957,6 +957,20 @@ function Warp({k}){const ref=useRef();
   return <canvas ref={ref} className="warp" aria-hidden="true"/>}
 /* assistant voices: eight names, each mapped to a different system voice where the browser has one */
 /* assistant voices: calm settings (pitch 0.95-1.05, rate 0.88-0.96); the most natural installed voice is matched to each persona */
+const wordsOf=s=>String(s).toLowerCase().replace(/[^a-z0-9 ]+/g,' ').split(/\s+/).filter(Boolean);
+/* spoken numbers to digits: "twenty five" -> 25, "one hundred and ten" -> 110, "thirty nine point two" -> 39.2, "seven and a half" -> 7.5 */
+function spokenNums(s){const U={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19},T={twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+  const tk=String(s).replace(/\band a half\b/g,' point five').replace(/-(?=[a-z])/g,' ').split(/\s+/).filter(Boolean),out=[],isN=w=>w in U||w in T||w==='hundred';
+  let cur=null,kind='',dec=null;const flush=()=>{if(cur!==null)out.push(cur+(dec?'.'+dec:''));cur=null;kind='';dec=null};
+  tk.forEach((w,i)=>{
+    if(dec!==null&&w in U&&U[w]<10){dec+=U[w];return}
+    if(w==='point'&&cur!==null&&dec===null&&tk[i+1] in U&&U[tk[i+1]]<10){dec='';return}
+    if(w==='and'&&kind==='hundred'&&isN(tk[i+1]||''))return;
+    if(w in T){if(kind==='hundred'&&dec===null)cur+=T[w];else{flush();cur=T[w]}kind='tens';return}
+    if(w in U){const v=U[w];if(dec===null&&cur!==null&&((kind==='tens'&&v>0&&v<10)||kind==='hundred'))cur+=v;else{flush();cur=v}kind='unit';return}
+    if(w==='hundred'){if(cur!==null&&cur>0&&cur<10&&dec===null)cur*=100;else{flush();cur=100}kind='hundred';return}
+    flush();out.push(w)});
+  flush();return out.join(' ')}
 const PERSONAS=[{n:'Aria',g:'f',pitch:1,rate:.92,desc:'Warm and steady'},{n:'Sage',g:'m',pitch:.97,rate:.9,desc:'Calm and grounded'},{n:'Willow',g:'f',pitch:1.03,rate:.94,desc:'Soft and gentle'},
  {n:'Rowan',g:'m',pitch:1,rate:.93,desc:'Clear and reassuring'},{n:'Iris',g:'f',pitch:.98,rate:.89,desc:'Slow and soothing'},{n:'Ellis',g:'m',pitch:.96,rate:.95,desc:'Quiet and friendly'}];
 const BADV=new Set(); /* voices that failed to start this session */
@@ -1125,6 +1139,12 @@ function App(){
   const [mode,setMode]=useState('dark'),[str,setStr]=useState(100),[large,setLarge]=useState(false),[scan,setScan]=useState(false),[scanIdx,setScanIdx]=useState(0),[voice,setVoice]=useState(()=>load('rs2_voice',false)),[heard,setHeard]=useState('');
   const [persona,setPersona]=useState(()=>clamp(load('rs2_persona',0),0,PERSONAS.length-1)),[warpN,setWarpN]=useState(0),[speakOn,setSpeakOn]=useState(true),[ptab,setPtab]=useState('status'),[menu,setMenu]=useState(false),[etOpen,setEtOpen]=useState(null),[a11y,setA11y]=useState(false),[mic,setMic]=useState('off');
   const speaking=useRef(false),sayN=useRef(0),speakRef=useRef(true),micStream=useRef(null),personaRef=useRef(0),firstSel=useRef(true);speakRef.current=speakOn;personaRef.current=persona;
+  /* sayAt/sayEnd: when the current reply started and the latest it can still be playing; utts keeps the utterances alive (browsers drop their end event otherwise); said = words of the last reply, to ignore its echo */
+  const sayAt=useRef(0),sayEnd=useRef(0),utts=useRef([]),said=useRef({w:new Set(),until:0});
+  /* true only while a reply is really being spoken: a lost end event can no longer leave the microphone ignored for good */
+  const talking=()=>{if(!speaking.current)return false;let s=true;try{s=speechSynthesis.speaking||speechSynthesis.pending}catch(e){}
+    if(Date.now()>sayEnd.current||(!s&&Date.now()-sayAt.current>1500)){speaking.current=false;return false}return true};
+  const isEcho=t=>{const w=wordsOf(t);return Date.now()<said.current.until&&w.length>=3&&w.filter(x=>said.current.w.has(x)).length/w.length>=.75};
   useEffect(()=>{try{speechSynthesis.getVoices()}catch(e){}},[]);
   useEffect(()=>{if(firstSel.current){firstSel.current=false;return}setWarpN(n=>n+1)},[sel]);
   /* assistant voice: shows the reply and reads it aloud; the recogniser ignores input while it is talking */
@@ -1132,11 +1152,13 @@ function App(){
     /* one utterance per sentence gives natural pauses; only the newest reply's last sentence clears the "speaking" flag */
     try{speechSynthesis.cancel();const n=++sayN.current,P=PERSONAS[personaRef.current],vc=voiceFor(personaRef.current);
       const parts=String(text).split(/(?<=[.!?])\s+(?=["'(A-Z0-9])/).map(x=>x.trim()).filter(Boolean);speaking.current=true;
-      parts.forEach((t,k)=>{const u=new SpeechSynthesisUtterance(t);if(vc)u.voice=vc;u.pitch=P.pitch;u.rate=P.rate;
-        u.onerror=e=>{if(vc&&e&&!['interrupted','canceled'].includes(e.error))BADV.add(vc.name);if(n===sayN.current&&k===parts.length-1)setTimeout(()=>{if(n===sayN.current)speaking.current=false},600)};
-        if(k===parts.length-1)u.onend=()=>setTimeout(()=>{if(n===sayN.current)speaking.current=false},600);
-        speechSynthesis.speak(u)});if(!parts.length)speaking.current=false}catch(e){speaking.current=false}},[]);
-  const hush=()=>{sayN.current++;try{speechSynthesis.cancel()}catch(e){};speaking.current=false};
+      sayAt.current=Date.now();sayEnd.current=sayAt.current+4000+String(text).length*95/P.rate+parts.length*400;said.current={w:new Set(wordsOf(text)),until:sayEnd.current+2500};
+      const done=()=>setTimeout(()=>{if(n===sayN.current){speaking.current=false;said.current.until=Date.now()+2500}},600);
+      utts.current=parts.map((t,k)=>{const u=new SpeechSynthesisUtterance(t);if(vc)u.voice=vc;u.pitch=P.pitch;u.rate=P.rate;
+        u.onerror=e=>{if(vc&&e&&!['interrupted','canceled','not-allowed'].includes(e.error))BADV.add(vc.name);if(n===sayN.current&&k===parts.length-1)done()};
+        if(k===parts.length-1)u.onend=done;
+        speechSynthesis.speak(u);return u});if(!parts.length)speaking.current=false}catch(e){speaking.current=false}},[]);
+  const hush=()=>{sayN.current++;try{speechSynthesis.cancel()}catch(e){};speaking.current=false;said.current.until=Date.now()+1500};
   const preview=()=>say(`Hi, I'm ${PERSONAS[personaRef.current].n}. Take a slow breath. I'll keep an eye on things.`,true);
   const pickVoice=i=>{setPersona(i);personaRef.current=i;save('rs2_persona',i);say('Hello, my name is '+PERSONAS[i].n+'.',true)};
   const [gp,setGp]=useState(()=>load('rs2_goals',{})),[sess,setSess]=useState({}),[toasts,setToasts]=useState([]),[now,setNow]=useState(Date.now()),[jit,setJit]=useState(0);
@@ -1186,15 +1208,56 @@ function App(){
     window.addEventListener('keydown',h);return()=>window.removeEventListener('keydown',h)});
 
   /* voice commands */
-  const cmd=useRef();cmd.current=t=>{t=t.toLowerCase().trim().replace(/[.!?]+$/,'');setHeard(t);
+  /* cmd(text) runs one command. With quiet=true an unknown command returns false without a spoken reply, so the recogniser can try its next guess. */
+  const cmd=useRef();cmd.current=(t,quiet,again)=>{const raw=String(t).trim().replace(/[.!?,]+$/,'');t=raw.toLowerCase();
+    /* a wake word or polite lead-in is allowed: "hey BioDeck, ...", "computer ...", "please ...", "can you ..." */
+    const t2=t.replace(/^(?:(?:hey|ok|okay|hi)\s+)?(?:bio ?deck|computer|assistant)[,\s]+/,'').replace(/^(?:please|can you|could you|would you|will you|i want to|i'd like to|i would like to|let's|lets)\s+/,'').replace(/\s+please$/,'');if(t2)t=t2;
+    setHeard(t);
+    if(intro===true&&/^(begin|start|enter|launch|go|continue|skip)\b/.test(t)){enterApp();return}
     const pi=PERSONAS.findIndex(p=>new RegExp('\\b'+p.n.toLowerCase()+'\\b').test(t));if(pi>=0){setSpeakOn(true);speakRef.current=true;pickVoice(pi);return}
     if(!['mind','brain','eye','eyes','heart','immune','gut','bone','bones','muscle','radiation','status','help','fitness','trends'].includes(t)&&pressByVoice(t,true))return;
+    /* record type and other drop-downs: "record type spine", "set type to heart", "category vision" */
+    const rt=t.match(/^(?:(?:set|change) (?:the )?(?:record )?type to|record type|category) (.+)$/);if(rt&&pressByVoice(rt[1],false))return;
+    /* dictation comes before the other commands, so the text may contain command words: "type my heart was racing" */
+    const ty=t.match(/^(?:type|write|enter|note|dictate)\s+(.+)/);
+    if(ty){const el=(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)&&document.activeElement.name!=='c'&&!['range','date'].includes(document.activeElement.type)?document.activeElement:null)||[...document.querySelectorAll('textarea,input[type=text],input[type=number]')].find(x=>x.getClientRects().length&&x.name!=='c');
+      const txt=el&&el.type==='number'?spokenNums(ty[1]):((raw.match(/(?:type|write|enter|note|dictate)\s+(.+)/i)||ty)[1]);
+      if(el){const P=el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(P,'value').set.call(el,txt);el.dispatchEvent(new Event('input',{bubbles:true}));el.focus();say('Entered: '+txt+'.');return}
+      if(/^(type|write|dictate)\b/.test(t)){say('There is no text field on this screen.');return}}
+    /* "close", "cancel", "back": the same as Escape */
+    if(/^(close|cancel|dismiss|exit|escape|go back|back|never mind|nevermind)( (it|this|that|the dialog|the window|the panel|the menu))?$/.test(t)){
+      if(urgent)doAck();else{const M=[...document.querySelectorAll('.modal')].pop(),b=M&&[...M.querySelectorAll('button')].find(x=>/^(close|cancel|later)$/i.test((x.innerText||'').trim()));
+        if(b)b.click();else if(a11y)setA11y(false);else if(menu)setMenu(false);else if(sel)setSel(null);else{say('Nothing is open to close.');return}}
+      say('Closed.');return}
+    if(/^(stop listening|microphone off|mic off|mute( the)? (microphone|mic))$/.test(t)){setVoice(false);say('Voice commands off.');return}
+    if(/\b(retake|take|start|begin|redo)\b.*\bbaseline\b|^baseline test$/.test(t)){startBase();say('Starting the baseline test for '+c.name+'. Say a value for each slider, then say next.');return}
+    const cw=t.match(/\b(next|previous|prior|other)\s+(crew( member)?|astronaut|person|profile)\b/);
+    if(cw){const i=crew.findIndex(x=>x.id===crewId),nx=crew[(i+(/next|other/.test(cw[1])?1:crew.length-1))%crew.length];setCrewId(nx.id);say('Switched to '+nx.name+'.');return}
     if(/eye.?track|fatigue test|\beye test\b/.test(t)){setSel('mind');setTab('monitor');setPtab('status');setEtOpen({sim:null});say('Opening the eye-tracking test. Face the screen and follow the instructions.');return}
+    /* modules: "move to the cockpit", "go to habitation", "take shelter" */
+    const MD=[['cargo',/cargo|water.?wall|shelter|safest/],['cockpit',/cock ?pit|flight deck/],['hab',/habitation|\bhab\b|habitat|living quarters/]].find(x=>x[1].test(t));
+    if(MD&&(/\b(move|go|relocate|head|walk|take me)\b/.test(t)||/shelter/.test(t))&&!/\d/.test(t)){const m=MODULES.find(x=>x.id===MD[0]);setLoc(m.id);say(`Moved to the ${m.name}, ${m.sh} percent shielding.`);return}
+    /* test scenarios */
+    if(/\bflare\b|solar storm|x.?class/.test(t)&&!/\d/.test(t)&&!/explain|what is|tell me/.test(t)){flare();say('Simulating an X-class solar flare.');return}
+    if(/fast.?forward|skip (ahead|forward)|(six|6) months/.test(t)){ff();say('Fast-forwarded six months to Mars. Mission day 180.');return}
+    if(/^reset$|\breset (to|everything|all|the mission|mission|nominal|the simulation)\b|\bnominal\b|\bstart over\b/.test(t)){reset();say('Reset to the nominal baseline.');return}
     const EV=[['station',/space station|\bstation\b|low earth orbit/],['lunar',/\blunar\b|\bmoon\b/],['transit',/mars transit|\btransit\b|deep space/],['rover',/\brover\b/]].find(x=>x[1].test(t));
     if(EV&&!/\d/.test(t)){setEnv(EV[0]);setRateMan(null);say('Environment set to '+ENVS[EV[0]].name+'. Background dose rate '+ENVS[EV[0]].rate+' millisieverts per day.');return}
     /* sliders by voice: "stress 4", "set temperature to 39.2", "radiation 50 percent", "increase sleep", "strength maximum" */
-    const NW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90,hundred:100};
-    const q=t.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred)\b/g,w=>NW[w]).replace(/(\d+)\s*point\s*(\d+)/g,'$1.$2');
+    /* the recogniser often writes a trailing number as a word that sounds the same: "stress for" = stress 4, "mood to" = mood 2 */
+    const q=spokenNums(t).replace(/(\d+)\s*point\s*(\d+)/g,'$1.$2').replace(/\b(for|fore)$/,'4').replace(/\b(to|too)$/,'2').replace(/\bwon$/,'1').replace(/\bate$/,'8');
+    /* fitness goals: "log 12", "log plank 90" fills the goal's result box and submits it */
+    const gl=tab==='fitness'&&!/session/.test(q)&&q.match(/^(?:log|record|enter)\b(.*?)(-?\d+(?:\.\d+)?)\D*$/);
+    if(gl){const ins=[...document.querySelectorAll('input[type=number]')].filter(x=>x.getClientRects().length),gw=wordsOf(gl[1]).filter(w=>w.length>2&&!['result','goal','the','for','new','log'].includes(w));
+      const el=(gw.length&&ins.find(x=>gw.every(w=>(x.getAttribute('aria-label')||'').toLowerCase().includes(w))))||ins[0];
+      if(el){Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,gl[2]);el.dispatchEvent(new Event('input',{bubbles:true}));const lab=(el.getAttribute('aria-label')||'Goal').replace(/^Log /,'');
+        setTimeout(()=>{if(el.form)el.form.requestSubmit()},60);say(`Logged ${gl[2]} for ${lab}.`);return}}
+    /* health log date: "date today", "set the date to 3 November 2026" */
+    const dm=t.match(/^(?:set |change )?(?:the )?date (?:to |is )?(.+)$/),dEl=dm&&[...document.querySelectorAll('input[type=date]')].find(x=>x.getClientRects().length);
+    if(dEl){const d=/today/.test(dm[1])?new Date():/yesterday/.test(dm[1])?new Date(Date.now()-864e5):new Date(spokenNums(dm[1]).replace(/(\d+)(st|nd|rd|th)\b/g,'$1').replace(/\bof\b/g,' '));
+      if(isNaN(d)){say('I did not catch that date. Say, for example, date 3 November 2026, or date today.');return}
+      const iso=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(dEl,iso);dEl.dispatchEvent(new Event('input',{bubbles:true}));dEl.dispatchEvent(new Event('change',{bubbles:true}));say('Date set to '+iso+'.');return}
     const SL=[['hr',['heart rate','pulse']],['day',['mission day','day']],['temp',['temperature','temp','fever']],['mood',['mood']],['stress',['stress']],['fatigue',['fatigue','tired']],['sleep',['sleep']],['nausea',['nausea']],['blur',['blur','vision']],['water',['water','hydration']],['cal',['food','calorie']],['antiox',['fruit','antioxidant']],['ex',['exercise']],['rate',['radiation','dose rate']],['str',['strength','intensity','brightness']]];
     const hit=SL.find(([k,ws])=>ws.some(w=>new RegExp('\\b'+w).test(q)));
     const nm=q.match(/-?\d+(\.\d+)?/),has=w=>new RegExp('\\b('+w+')\\b').test(q);
@@ -1202,19 +1265,28 @@ function App(){
     if(hit&&(nm||dir||ext)){const k=hit[0];
       const X={rate:{l:'Incoming radiation',u:' mSv/day',min:.1,max:60,step:.1,cur:R,put:setRateMan},day:{l:'Mission day',min:0,max:240,step:1,cur:day,put:setDay},str:{l:mode[0].toUpperCase()+mode.slice(1)+' mode strength',u:'%',min:0,max:100,step:1,cur:str,put:setStr}}[k]
         ||{...FIELDS[k],step:FIELDS[k].step||1,cur:v[k],put:x=>set(k,x)};
-      let val=nm?(has('percent')||q.includes('%')?X.min+(X.max-X.min)*(+nm[0])/100:+nm[0]):ext?X[ext]:X.cur+dir*Math.max(X.step,Math.round((X.max-X.min)/10/X.step)*X.step);
+      let val=nm?((has('percent')||q.includes('%'))&&(X.u||'').trim()!=='%'?X.min+(X.max-X.min)*(+nm[0])/100:+nm[0]):ext?X[ext]:X.cur+dir*Math.max(X.step,Math.round((X.max-X.min)/10/X.step)*X.step);
       val=+(Math.round(clamp(val,X.min,X.max)/X.step)*X.step).toFixed(2);X.put(val);
       if(FIELDS[k]){const rg=RK.find(r=>REG[r].fields.includes(k));if(rg){setSel(rg);setTab('monitor')}}
       say(`${X.l} set to ${val}${X.u||''}.`);return}
-    if(hit&&!nm&&!['blur','day','rate','temp','sleep','ex'].includes(hit[0])&&!/read|explain|about/.test(t)){say(`Say a value for ${hit[1][0]}, for example "${hit[1][0]} 4" or "${hit[1][0]} 50 percent".`);return}
+    if(hit&&!nm&&!['blur','day','rate','temp','sleep','ex'].includes(hit[0])&&!/read|explain|about/.test(t)){if(quiet)return false;say(`Say a value for ${hit[1][0]}, for example "${hit[1][0]} 4" or "${hit[1][0]} 50 percent".`);return}
+    /* charts: "read the chart", "next reading", "previous reading", "first reading", "latest reading" */
+    if(/\b(reading|chart|graph|data point)\b/.test(t)){const cs=[...document.querySelectorAll('.chart')].filter(x=>x.getClientRects().length);
+      if(cs.length){const cwd=wordsOf(t).filter(w=>w.length>3&&!/chart|graph|reading|next|previous|prior|first|last|latest|earliest|point|data|read|show|what|this|that/.test(w));
+        const el=(cwd.length&&cs.find(x=>cwd.every(w=>(x.getAttribute('aria-label')||'').toLowerCase().includes(w))))||(cs.includes(document.activeElement)?document.activeElement:cs[0]);
+        const key=/previous|prior|earlier|left/.test(t)?'ArrowLeft':/next|forward|later|right/.test(t)?'ArrowRight':/first|start|earliest/.test(t)?'Home':/last|latest|end|today/.test(t)?'End':null;
+        el.focus();el.scrollIntoView({block:'center'});if(key)el.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true}));
+        setTimeout(()=>say((el.getAttribute('aria-label')||'Chart').split(',')[0]+'. '+(el.getAttribute('aria-valuetext')||'No reading selected.')),150);return}}
+    if(/\bstatus (tab|view|panel)\b/.test(t)&&sel){setPtab('status');say('Showing the status for '+REG[sel].name+'.');return}
+    if(/scroll( to)?( the)? (top|bottom)|^(top|bottom) of( the)? page$/.test(t)){window.scrollTo({top:/top/.test(t)?0:document.documentElement.scrollHeight,behavior:'smooth'});return}
     /* assistant questions */
     const m={mind:'mind',brain:'mind',eye:'eyes',heart:'heart',immune:'immune',gut:'gut',nutrition:'gut',stomach:'gut',bone:'bones',muscle:'bones',radiation:'radiation'};
     const rk=(Object.keys(m).find(w=>t.includes(w))||'')&&m[Object.keys(m).find(w=>t.includes(w))];
     const openR=k=>{setSel(k);setTab('monitor')};
-    if(/\b(stop talking|stop speaking|be quiet|quiet|silence|stop reading)\b/.test(t)){hush();return}
+    if(/\b(stop talking|stop speaking|be quiet|quiet|silence|stop reading|shut up|hush)\b|^(stop|enough)$/.test(t)){hush();return}
     if(/what should i (look|check|do first)|recommend|what now|what next|suggest|where (do|should) i start/.test(t)){say(advise());return}
     if(/\b(status|summary|how am i)\b/.test(t)){say(statusText());return}
-    if(/\b(help|what can i say|commands)\b/.test(t)){say('You can say a body system, such as heart. Set any slider, such as stress 4 or radiation 50 percent. Say the name of any button to press it. Say eye tracking test to check for fatigue with the camera. Ask what should I look at, explain the heart, read this aloud, or read the report. Say reset view to zoom out, and stop talking to silence me.');return}
+    if(/\b(help|what can i say|commands)\b/.test(t)){say('You can say a body system, such as heart. Set any slider, such as stress 4 or radiation 50 percent. Say the name of any button, tab, switch or list item to press it, and add on or off for a switch. Say type, then your words, to fill in a text box. Say close or back to leave a dialog. Say eye tracking test to check for fatigue with the camera. Ask what should I look at, explain the heart, read the chart, read this aloud, or read the report. Say reset view to zoom out, and stop to silence me.');return}
     if(/explain|tell me about|what is|what are|describe|learn about|teach/.test(t)&&rk){openR(rk);setPtab('guide');say(`${REG[rk].name}. ${GUIDE[rk].ov} ${GUIDE[rk].fn} ${GUIDE[rk].how}`);return}
     if(/\b(read|aloud|out loud)\b/.test(t)){if(t.includes('report')){setTab('report');say(reportSpeech())}else if(/fact/.test(t)&&(rk||sel)){const k=rk||sel;openR(k);setPtab('guide');say('Key facts. '+GUIDE[k].facts.join(' '))}else if(rk){openR(rk);say(regionText(rk))}else say(readPanel());return}
     if(/what (should|do|can) i do|next steps|actions/.test(t)){const k=rk||sel||RK.slice().sort((a,b)=>A[b].score-A[a].score)[0];openR(k);say(regionText(k));return}
@@ -1222,6 +1294,8 @@ function App(){
     if(/\b(guide|anatomy)\b/.test(t)&&sel){setPtab('guide');say('Showing the anatomy guide for '+REG[sel].name+'.');return}
     /* a spoken label that exactly names something on screen presses it */
     if(!(rk&&t.split(/\s+/).length===1)&&pressByVoice(t,true))return;
+    /* away from the monitor, a longer phrase that names something on screen ("recovery for mind") presses it instead of opening the body system */
+    if(rk&&tab!=='monitor'&&pressByVoice(t,false,2))return;
     if(rk){openR(rk);say(regionText(rk));return}
     if(/check.?in/.test(t)){setCheckin(0);say('Starting your check-in. Say a value for each slider, then say next.');return}
     if(t.includes('report')){setTab('report');say('Opening the surgeon report. Say read the report to hear it.');return}
@@ -1232,42 +1306,74 @@ function App(){
     if(t.includes('shelter')){setLoc('cargo');say('Moved to the Water-Wall Cargo Bay, the best-shielded module.');return}
     if(t.includes('acknowledge')||t.includes('okay')){doAck();say('Acknowledged.');return}
     for(const k of Object.keys(TH))if(new RegExp('\\b'+k+'\\b').test(t)){setMode(k);say(k[0].toUpperCase()+k.slice(1)+' mode on.');return}
-    const ty=t.match(/^(?:type|write|enter|note|dictate)\s+(.+)/);
-    if(ty){const el=(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)&&document.activeElement.name!=='c'&&document.activeElement.type!=='range'?document.activeElement:null)||[...document.querySelectorAll('textarea,input[type=text],input[type=number]')].find(x=>x.offsetParent&&x.name!=='c');
-      if(el){const P=el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;Object.getOwnPropertyDescriptor(P,'value').set.call(el,ty[1]);el.dispatchEvent(new Event('input',{bubbles:true}));el.focus();say('Entered: '+ty[1]+'.')}else say('There is no text field on this screen.');return}
     if(/scroll (down|up)/.test(t)){window.scrollBy({top:t.includes('down')?500:-500,behavior:'smooth'});return}
     if(pressByVoice(t,false))return;
-    say(`I did not find a command in "${t}". Say help to hear examples.`)};
+    /* the photo checks, shelter map and space-weather controls sit on the Status view: switch to it from the anatomy guide and try once more */
+    if(sel&&ptab==='guide'&&!again&&/photo|sample|shelter|cockpit|habitation|cargo|module|donki|nasa|fetch|weather|result|clear/.test(t)){setPtab('status');setTimeout(()=>cmd.current(raw,false,true),150);return}
+    if(quiet)return false;
+    say(urgent?`An alert is open. Say acknowledge first, then repeat "${t}".`:`I did not find a command in "${t}". Say help to hear examples.`);return false};
 
-  /* press any visible button, tab, toggle, checklist item or drop-down option by saying its label */
-  const pressByVoice=(t,strict)=>{const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9% ]+/g,' ').replace(/\s+/g,' ').trim();
-    const SKIP=new Set(['click','press','select','open','toggle','tick','the','a','to','on','button','please','go','switch','choose','show','turn','tap','hit']);
-    const scope=document.querySelector('.hzwrap')||document.querySelector('.modal')||document;
-    const els=[...scope.querySelectorAll('button,[role=button],[role=tab],label.chk,label.btn,option')].filter(el=>!el.disabled),shown=el=>!!(el.tagName==='OPTION'?el.parentElement.offsetParent:el.offsetParent);
-    const AKA={doctor:'dr',commander:'cmdr',lieutenant:'lt'};
-    const words=norm(t).split(' ').filter(w=>w&&!SKIP.has(w)).map(w=>AKA[w]||w);if(!words.length)return false;
-    let best=null,bs=0,bl='';
-    const seek=list=>list.forEach(el=>{const lab=norm(el.getAttribute('aria-label')||el.innerText||el.textContent);if(!lab)return;const lw=lab.split(' ');
-      if(!words.every(w=>lw.some(x=>x===w||(w.length>3&&x.startsWith(w)))))return;const sc=Math.min(1,words.length/lw.length);
-      if(strict&&sc<1)return;if(sc>bs){bs=sc;best=el;bl=(el.getAttribute('aria-label')||el.innerText||el.textContent).replace(/\s+/g,' ').trim()}});
-    seek(els.filter(shown));if(!best)seek(els.filter(el=>!shown(el)));   /* collapsed sidebar sections and the accessibility menu still respond */
+  /* everything the microphone hears comes through here: alts = the recogniser's guesses for one phrase, best first */
+  const hear=useRef();hear.current=alts=>{alts=alts.map(a=>String(a||'').trim()).filter(Boolean);if(!alts.length)return;
+    /* while a reply is being read out, only a short "stop" or "acknowledge" gets through, so the assistant never obeys its own voice */
+    if(talking()){const a=alts.map(x=>x.toLowerCase().replace(/[^a-z ]+/g,'').trim()).find(x=>/^(please )?(stop|stop talking|stop speaking|stop reading|be quiet|quiet|silence|hush|enough|shut up|acknowledge|acknowledged|okay|ok)( please)?$/.test(x));if(a)cmd.current(a);return}
+    if(isEcho(alts[0]))return;
+    for(const a of alts)if(cmd.current(a,true)!==false)return;
+    cmd.current(alts[0])};
+
+  /* press any button, tab, toggle, section heading, checklist item or drop-down option by saying its label.
+     "turn off ..." / "... on" leave a switch alone when it is already in that state; "second remove" picks among equal labels. */
+  const pressByVoice=(t,strict,min=1)=>{const norm=s=>(s||'').toLowerCase().replace(/[^a-z0-9% ]+/g,' ').replace(/\s+/g,' ').trim();
+    const SKIP=new Set(['click','press','select','open','toggle','tick','the','a','to','on','button','please','go','switch','choose','show','turn','tap','hit','off','enable','disable','activate','deactivate','untick','uncheck','deselect','crew','member','tab','section','expand','collapse']);
+    const n=norm(t),off=/\b(off|disable|deactivate|untick|uncheck|deselect)\b/.test(n),onW=!off&&(/\b(turn|switch) on\b| on$|\b(enable|activate)\b/.test(n));
+    const mods=[...document.querySelectorAll('.modal')],scope=document.querySelector('.hzwrap')||mods[mods.length-1]||document;
+    const els=[...scope.querySelectorAll('button,[role=button],[role=tab],summary,label,option')].filter(el=>!el.disabled&&(el.tagName!=='LABEL'||el.matches('.chk,.btn')||el.querySelector('input[type=checkbox],input[type=radio]')));
+    const shown=el=>(el.tagName==='OPTION'?el.parentElement:el).getClientRects().length>0;
+    const AKA={doctor:'dr',commander:'cmdr',lieutenant:'lt'},ORD={first:1,second:2,third:3,fourth:4,fifth:5,sixth:6,last:-1};
+    let words=n.split(' ').filter(w=>w&&!SKIP.has(w)).map(w=>AKA[w]||w),nth=0;
+    const oi=words.findIndex(w=>ORD[w]);if(oi>=0&&words.length>1){nth=ORD[words[oi]];words=words.filter((w,i)=>i!==oi&&w!=='one')}
+    if(!words.length||words.length<min)return false;
+    const labOf=el=>el.getAttribute('aria-label')||el.innerText||el.textContent||'';
+    const seek=list=>{let hits=[],bs=0;list.forEach(el=>{const lab=norm(labOf(el));if(!lab)return;const lw=lab.split(' ');
+        if(!words.every(w=>lw.some(x=>x===w||(w.length>3&&x.startsWith(w)))))return;const lk=lw.filter(x=>!SKIP.has(x)),sc=Math.min(1,words.length/(lk.length||lw.length));   /* filler words ("to", "the") count on neither side */
+        if(strict&&sc<1)return;if(sc>bs+1e-9){bs=sc;hits=[el]}else if(Math.abs(sc-bs)<1e-9)hits.push(el)});
+      return hits.length?hits[nth<0?hits.length-1:Math.min(Math.max(nth,1),hits.length)-1]:null};
+    const best=seek(els.filter(shown))||seek(els.filter(el=>!shown(el)));   /* collapsed sidebar sections and the accessibility menu still respond */
     if(!best)return false;
-    if(best.tagName==='OPTION'){const s=best.parentElement;Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(s,best.value);s.dispatchEvent(new Event('change',{bubbles:true}))}else best.click();
-    say('Done: '+bl.slice(0,70)+'.');return true};
+    const bl=labOf(best).replace(/\s+/g,' ').trim().slice(0,70),inp=best.tagName==='LABEL'?best.querySelector('input'):null,pr=best.getAttribute('aria-pressed'),state=inp?inp.checked:pr==null?null:pr==='true';
+    if(state!==null&&(off||onW)&&state===onW){say(`${bl} is already ${state?'on':'off'}.`);return true}
+    const ex=best.getAttribute('aria-expanded');   /* "open warm-up" does not close a section that is already open */
+    if(ex==='true'&&/\b(open|expand|show)\b/.test(n)){say(bl+' is already open.');return true}
+    if(ex==='false'&&/\bcollapse\b/.test(n)){say(bl+' is already closed.');return true}
+    const n0=sayN.current,det=best.closest('details');if(det&&!det.open&&best.tagName!=='SUMMARY')det.open=true;
+    if(best.tagName==='OPTION'){const s=best.parentElement;Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(s,best.value);s.dispatchEvent(new Event('change',{bubbles:true}))}
+    else if(typeof best.click==='function')best.click();else best.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true}));   /* SVG buttons (the shelter map) have no click() */
+    if(sayN.current===n0)say('Done: '+bl+'.');return true};   /* a button that speaks its own reply is not talked over */
 
   /* one microphone grant per session: open a single audio stream, keep it open, and keep one recogniser running */
   useEffect(()=>{save('rs2_voice',voice);if(!voice){setMic('off');return}
     const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SR){toast('Voice input is not supported in this browser. Use Edge or Chrome. You can still type commands here.');setVoice(false);return}
-    let on=true,timer=null;const r=new SR();r.continuous=true;r.interimResults=false;r.lang='en-US';
-    r.onstart=()=>setMic('on');
-    r.onresult=e=>{if(speaking.current)return;for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)cmd.current(e.results[i][0].transcript)};
-    r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'){on=false;setVoice(false);toast('Microphone permission was refused. Allow the microphone for this page, then turn Voice commands on again.')}};
-    r.onend=()=>{if(on)timer=setTimeout(()=>{try{r.start()}catch(e){}},300)};   /* browsers end a session after silence: resume the same one */
-    (async()=>{try{if(!micStream.current&&navigator.mediaDevices)micStream.current=await navigator.mediaDevices.getUserMedia({audio:true})}
-      catch(e){on=false;setVoice(false);toast('Microphone permission was refused. Allow the microphone for this page, then turn Voice commands on again.');return}
-      if(on)try{r.start()}catch(e){}})();
-    return()=>{on=false;clearTimeout(timer);try{r.abort()}catch(e){};if(micStream.current){micStream.current.getTracks().forEach(x=>x.stop());micStream.current=null}}},[voice]);
+    let on=true,timer=null,r=null,wait=300,warned='';
+    const warn=(k,m)=>{setMic('wait');if(warned!==k){warned=k;toast(m)}};
+    /* a recogniser that refuses to restart is replaced by a new one, so listening always resumes */
+    const start=()=>{clearTimeout(timer);if(!on)return;try{r.start()}catch(e){if(!e||e.name!=='InvalidStateError'){make();timer=setTimeout(start,1000)}}};
+    const make=()=>{if(r){r.onstart=r.onresult=r.onerror=r.onend=null;try{r.abort()}catch(e){}}
+      r=new SR();r.continuous=true;r.interimResults=false;r.maxAlternatives=3;r.lang='en-US';
+      r.onstart=()=>setMic('on');
+      r.onresult=e=>{wait=300;warned='';for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)hear.current(Array.from(e.results[i]).map(a=>a.transcript))};
+      r.onerror=e=>{const k=e.error;
+        if(k==='not-allowed'||k==='service-not-allowed'){on=false;setVoice(false);toast('Microphone permission was refused. Allow the microphone for this page, then turn Voice commands on again.')}
+        else if(k==='audio-capture'){wait=3000;warn(k,'No microphone was found. Plug one in, or check the sound settings. Voice commands start as soon as it is available.')}
+        else if(k==='network'){wait=5000;warn(k,'The browser could not reach its speech service, which voice commands need. Check the internet connection. You can still type commands in the Assistant box.')}
+        else if(k==='language-not-supported'){wait=5000;warn(k,'This browser has no English speech recognition. Use Edge or Chrome. You can still type commands in the Assistant box.')}};
+      r.onend=()=>{if(on)timer=setTimeout(start,wait)}};   /* browsers end a session after silence: resume it */
+    make();
+    (async()=>{try{if(!micStream.current&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)micStream.current=await navigator.mediaDevices.getUserMedia({audio:true})}
+      catch(e){if(e&&e.name==='NotFoundError'){on=false;setVoice(false);toast('No microphone was found. Plug one in, then turn Voice commands on again.');return}
+        on=false;setVoice(false);toast('Microphone permission was refused. Allow the microphone for this page, then turn Voice commands on again.');return}
+      start()})();
+    return()=>{on=false;clearTimeout(timer);if(r){r.onend=null;try{r.abort()}catch(e){}}if(micStream.current){micStream.current.getTracks().forEach(x=>x.stop());micStream.current=null}}},[voice]);
 
   /* scenarios */
   const flare=()=>{setH(h=>({...h,radiation:true}));setFlares(f=>[...f,{day,mSv:25}]);setRateMan(45);setSpe({until:Date.now()+10*60*1000});setSel('radiation');setTab('monitor');set('nausea',2)};
@@ -1384,7 +1490,7 @@ function App(){
        <button className="btn sm full" onClick={ff}>Fast-forward 6 months to Mars</button>
        <button className="btn sm full" onClick={reset}>Reset to nominal baseline</button></div></div></details>
     <section className="assist" aria-label="Assistant">
-     <div className="who"><span className={'dot '+(voice&&mic==='on'?'on':'')}/><b>Assistant</b><span className="sub">{voice?(mic==='on'?'listening':'starting microphone'):'microphone off'}{heard?` · heard "${heard}"`:''}</span></div>
+     <div className="who"><span className={'dot '+(voice&&mic==='on'?'on':'')}/><b>Assistant</b><span className="sub">{voice?(mic==='on'?'listening':mic==='wait'?'microphone not available':'starting microphone'):'microphone off'}{heard?` · heard "${heard}"`:''}</span></div>
      <form onSubmit={e=>{e.preventDefault();const i=e.target.elements.c;if(i.value.trim()){cmd.current(i.value);i.value=''}}}>
       <input name="c" type="text" aria-label="Type a command for the assistant" placeholder='Try "stress 4" or "explain the heart"'/></form>
      <button className="btn sm full" onClick={()=>say(advise())}>What should I look at?</button>
